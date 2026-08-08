@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Wagyu Bull Run RISEx Cup</title>
+  <link rel="stylesheet" href="style.css?v=1">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+</head>
+<body>
+  <div class="container">
+    <button id="lang-toggle" class="lang-toggle" onclick="toggleLang()">EN</button>
+
+    <header class="animate-fade-in">
+      <h1>Wagyu Bull Run RISEx Cup</h1>
+    </header>
+
+    <!-- 大会概要・取引条件 -->
+    <div class="dashboard-card animate-fade-in" style="animation-delay: 0.12s;">
+      <h2 class="section-title" data-i18n="overviewTitle">大会概要</h2>
+      <ul class="info-list">
+        <li data-i18n="entryPeriod">エントリー期間：調整中</li>
+        <li data-i18n="compPeriod">大会期間：2026年8月（2週間・日程調整中）</li>
+        <li data-i18n-html="entryForm">大会エントリーは<a href="#" target="_blank" rel="noopener">こちらのフォーム（準備中）</a>より行ってください。</li>
+      </ul>
+      <p class="info-note" data-i18n="formNote">※賞品発送連絡のためフォーム記入時間違いがないようご注意ください。</p>
+
+      <h2 class="section-title" style="margin-top: 20px;" data-i18n="tradingTitle">取引条件</h2>
+      <ul class="info-list">
+        <li data-i18n="condReferral">公式リファラルコード（準備中）を登録したRISExアカウントによる取引のみが対象となります。</li>
+        <li data-i18n="condMinDeposit">最低入金額は 200 USDC となります。</li>
+        <li data-i18n="condRoiVolume">ROI部門のランキング対象となるには $50,000 以上の取引量が必要です。</li>
+      </ul>
+      <!-- バナー画像が用意でき次第、このプレースホルダを以下に差し替える
+      <img src="assets/banner.png" alt="大会バナー" class="banner-thumb" onclick="document.getElementById('banner-modal').classList.add('active')">
+      -->
+      <div class="banner-placeholder" data-i18n="bannerPlaceholder">🖼️ バナー画像（準備中）</div>
+    </div>
+
+    <!-- バナー拡大表示 -->
+    <div id="banner-modal" class="modal-overlay" onclick="this.classList.remove('active')">
+      <img src="assets/banner.png" alt="大会バナー（拡大）" class="modal-image">
+    </div>
+
+    <!-- リワードテーブル -->
+    <div class="dashboard-card animate-fade-in" style="animation-delay: 0.14s;">
+      <h2 class="section-title">Reward Table</h2>
+      <p style="color: var(--text-secondary); margin: 0 0 4px 0; font-size: 0.85rem;">
+        <span data-i18n="rewardCurrentVol">現在の Total Volume: </span><span id="reward-vol" style="color: var(--text-primary); font-weight: 600;">—</span>
+      </p>
+      <div class="tier-tabs" id="tier-tabs"></div>
+      <div class="reward-tables" id="reward-tables"></div>
+      <p style="color: var(--text-secondary); font-size: 0.75rem; margin-top: 12px;" data-i18n-html="rewardNote">
+        ※賞金プールは大会期間中の総取引量（対象アカウントのみ）に応じて4ティアで変動します。<br>
+        ※各部門の上位3名にはWagyuギフト（¥10,000相当）が贈られます。
+      </p>
+    </div>
+
+    <div class="status-bar animate-fade-in" style="animation-delay: 0.18s;">
+      <div id="status" class="status">...</div>
+      <button class="refresh-btn" onclick="fetchData()"><span data-i18n="refresh">🔄 更新</span></button>
+    </div>
+
+    <!-- ROI ランキング -->
+    <div class="dashboard-card animate-fade-in" style="animation-delay: 0.2s;">
+      <h2 class="section-title">ROI Ranking</h2>
+      <div class="blind-message" id="roi-blind" style="display:none;"></div>
+      <div id="roi-content">
+        <div class="table-responsive">
+          <table class="leaderboard-table">
+            <thead>
+              <tr>
+                <th>Rank</th>
+                <th>Trader</th>
+                <th>Capital</th>
+                <th>ROI</th>
+                <th>PnL</th>
+              </tr>
+            </thead>
+            <tbody id="roi-ranking-body"></tbody>
+          </table>
+        </div>
+        <p style="color: var(--text-secondary); font-size: 0.75rem; margin-top: 8px;" data-i18n-html="roiNote">
+          ✅ … ROI部門の最低取引量（$50,000）を達成すると名前に ✅ がつきます。未達成の方はランキング下部に表示されます。<br>
+          Capital … ROI計算の分母（大会開始時のエクイティ＋期間中の入金）。<span class="baseline-warn">赤字</span>は最低入金額（200 USDC）未達です。
+        </p>
+      </div>
+    </div>
+
+    <!-- Volume ランキング -->
+    <div class="dashboard-card animate-fade-in" style="animation-delay: 0.3s;">
+      <h2 class="section-title">Volume Ranking</h2>
+      <div class="blind-message" id="vol-blind" style="display:none;"></div>
+      <div id="vol-content">
+        <p style="color: var(--text-secondary); margin: 0 0 12px 0;"><span data-i18n="volTotalLabel">Total Volume: </span><span id="vol-total" style="color: var(--text-primary); font-weight: 600;">—</span></p>
+        <div class="table-responsive">
+          <table class="leaderboard-table">
+            <thead>
+              <tr>
+                <th>Rank</th>
+                <th>Trader</th>
+                <th>Volume</th>
+              </tr>
+            </thead>
+            <tbody id="vol-ranking-body"></tbody>
+          </table>
+        </div>
+        <p style="color: var(--text-secondary); font-size: 0.75rem; margin-top: 8px;" data-i18n-html="volNote">
+          <span class="baseline-warn">赤字</span>は最低入金額（200 USDC）未達のためリワード対象外です。
+        </p>
+      </div>
+    </div>
+
+    <!-- 大会規約 -->
+    <div class="dashboard-card rules-section animate-fade-in" style="animation-delay: 0.4s;">
+      <h2 class="section-title" data-i18n="rulesTitle">大会規約</h2>
+      <ul class="rules-list">
+        <li data-i18n="rule1">大会期間は2026年8月の2週間（日程調整中）となります。</li>
+        <li data-i18n="rule2">公式リファラルコードを登録したアカウントによる取引のみがランキング・賞金ティア判定の対象となります。</li>
+        <li data-i18n="rule3">リワード獲得には最低 200 USDC の入金が必要です。</li>
+        <li data-i18n="rule4">ROI部門のランキング対象となるには $50,000 以上の取引量が必要です。</li>
+        <li data-i18n="rule5">ROIは「PnL ÷（大会開始時エクイティ＋期間中入金）」で算出します。期間中の出金はPnLに加算され、分母からは差し引かれません。</li>
+        <li data-i18n="rule6">同率の場合、ROI部門は取引量、Volume部門は対象資本により順位を決定します。</li>
+        <li data-i18n="rule7">ウォッシュトレード・自己約定と判断された取引はランキング対象外となります。</li>
+        <li data-i18n="rule8">最終的な入賞者の確定および失格の判断はRISExが行います。</li>
+        <li data-i18n-html="rule9">ギフトコードは<a href="https://x.com/wagyuinternat?s=20" target="_blank" rel="noopener">wagyu international</a>の近江牛と引き換えることができます。</li>
+        <li data-i18n-html="rule10">賞品発送連絡はXのDMを通じて<a href="https://x.com/bb_jpdao" target="_blank" rel="noopener">bb_jpdao</a>より連絡します。</li>
+        <li data-i18n="rule11">Xで連絡がとれない受賞者は送付時点レートで同額の $JPYC を提出されたウォレットへ送付します。</li>
+        <li data-i18n="rule12">海外在住の受賞者は送付時点レートで同額の $JPYC を提出されたウォレットへ送付します。</li>
+        <li data-i18n="rule13">本大会は、仮想通貨取引の技術向上と楽しみを目的としたイベントです。</li>
+        <li data-i18n="rule14">実際の資金を用いたトレードが行われますが参加者自身の責任において参加ください。</li>
+        <li data-i18n="rule15">仮想通貨の価格は常に変動しており、元本の損失を含むリスクがあります。運営は取引による損失やトラブル等について一切の責任を負いません。</li>
+        <li data-i18n="rule16">RISExの利用規約や法令を遵守のうえ、ご参加ください。規約違反が確認された場合は、参加資格の剥奪や賞品授与の取り消しとなる場合があります。</li>
+        <li data-i18n="rule17">本イベントの内容やルールは、予告なく変更・中止となる場合があります。あらかじめご了承ください。</li>
+        <li data-i18n="rule18">同一人物の複数アカウントでの参加、複数口座間の両建て等の不正行為が確認された場合は、順位や賞品授与の対象から除外します。</li>
+      </ul>
+    </div>
+
+    <footer class="animate-fade-in" style="text-align: center; color: var(--text-secondary); font-size: 0.8rem; margin-top: 40px; animation-delay: 0.5s;">
+      Powered by RISEx API
+    </footer>
+  </div>
+
+  <script src="app.js?v=1"></script>
+</body>
+</html>
