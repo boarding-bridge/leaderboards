@@ -1,12 +1,19 @@
+/* RISEx テーマ（黒 × ブランドグリーン #03de82、rise.trade 本番CSSから抽出） */
 :root {
-  --bg-color: #0d1117;
-  --card-bg: rgba(22, 27, 34, 0.7);
-  --accent-color: #58a6ff;
-  --text-primary: #c9d1d9;
-  --text-secondary: #8b949e;
-  --success: #3fb950;
-  --border-color: rgba(240, 246, 252, 0.1);
-  --glass-border: rgba(255, 255, 255, 0.1);
+  --bg-color: #0c0e12;
+  --card-bg: rgba(18, 22, 28, 0.72);
+  --accent-color: #03de82;
+  --accent-dim: #03ca76;
+  --accent-soft: #8bf0c6;
+  --text-primary: #ececed;
+  --text-secondary: #9aa1ab;
+  --success: #35e59b;
+  --danger: #ff6467;
+  --warning: #fac515;
+  --border-color: rgba(255, 255, 255, 0.08);
+  --glass-border: rgba(3, 222, 130, 0.16);
+  --accent-glow: rgba(3, 222, 130, 0.35);
+  --font-mono: "SFMono-Regular", ui-monospace, "Roboto Mono", Menlo, Consolas, monospace;
 }
 
 * {
@@ -42,13 +49,14 @@ body {
   padding: 6px 14px;
   font-size: 0.8rem;
   font-weight: 600;
+  font-family: var(--font-mono);
   cursor: pointer;
   transition: all 0.2s;
   z-index: 10;
 }
 
 .lang-toggle:hover {
-  background: rgba(255, 255, 255, 0.1);
+  background: rgba(3, 222, 130, 0.1);
   color: var(--text-primary);
 }
 
@@ -63,7 +71,7 @@ body {
   justify-content: center;
   border: 2px dashed var(--glass-border);
   border-radius: 8px;
-  background: rgba(255, 255, 255, 0.02);
+  background: rgba(3, 222, 130, 0.03);
   color: var(--text-secondary);
   font-size: 0.85rem;
 }
@@ -76,7 +84,7 @@ header {
 h1 {
   font-size: 2.5rem;
   font-weight: 800;
-  background: linear-gradient(90deg, #58a6ff, #bc8cff);
+  background: linear-gradient(90deg, #ffffff, var(--accent-color));
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   margin-bottom: 10px;
@@ -122,17 +130,18 @@ input[type="text"]:focus {
 
 button {
   background: var(--accent-color);
-  color: #fff;
+  color: #0c0e12;
   border: none;
   border-radius: 8px;
   padding: 12px 24px;
-  font-weight: 600;
+  font-weight: 700;
   cursor: pointer;
-  transition: opacity 0.2s, transform 0.1s;
+  transition: opacity 0.2s, transform 0.1s, box-shadow 0.2s;
 }
 
 button:hover {
   opacity: 0.9;
+  box-shadow: 0 0 16px var(--accent-glow);
 }
 
 button:active {
@@ -150,7 +159,8 @@ button:active {
   padding: 12px 16px;
   color: var(--text-secondary);
   font-weight: 600;
-  font-size: 0.9rem;
+  font-size: 0.85rem;
+  font-family: var(--font-mono);
   text-transform: uppercase;
   letter-spacing: 0.05em;
 }
@@ -161,18 +171,18 @@ button:active {
 }
 
 .leaderboard-table tr:hover {
-  background: rgba(255, 255, 255, 0.06);
+  background: rgba(3, 222, 130, 0.05);
   transform: translateX(4px);
 }
 
 .leaderboard-table td {
   padding: 16px;
-  border-top: 1px solid var(--glass-border);
-  border-bottom: 1px solid var(--glass-border);
+  border-top: 1px solid var(--border-color);
+  border-bottom: 1px solid var(--border-color);
 }
 
 .leaderboard-table td:first-child {
-  border-left: 1px solid var(--glass-border);
+  border-left: 1px solid var(--border-color);
   border-top-left-radius: 8px;
   border-bottom-left-radius: 8px;
   font-weight: bold;
@@ -180,14 +190,14 @@ button:active {
 }
 
 .leaderboard-table td:last-child {
-  border-right: 1px solid var(--glass-border);
+  border-right: 1px solid var(--border-color);
   border-top-right-radius: 8px;
   border-bottom-right-radius: 8px;
 }
 
 .roi-positive { color: var(--success); }
-.roi-negative { color: #f85149; }
-.baseline-warn { color: #f85149; }
+.roi-negative { color: var(--danger); }
+.baseline-warn { color: var(--danger); }
 
 .blind-message {
   text-align: center;
@@ -200,11 +210,11 @@ button:active {
 
 /* 入賞圏ハイライト */
 .leaderboard-table tr.rank-prize {
-  background: rgba(88, 166, 255, 0.08);
+  background: rgba(3, 222, 130, 0.07);
 }
 
 .leaderboard-table tr.rank-prize:hover {
-  background: rgba(88, 166, 255, 0.14);
+  background: rgba(3, 222, 130, 0.12);
 }
 
 .leaderboard-table tr.rank-prize td:first-child {
@@ -227,18 +237,19 @@ button:active {
   padding: 5px 12px;
   font-size: 0.8rem;
   font-weight: 600;
+  font-family: var(--font-mono);
   cursor: pointer;
   transition: all 0.2s;
 }
 
 .page-tab:hover {
-  background: rgba(255, 255, 255, 0.08);
+  background: rgba(3, 222, 130, 0.08);
 }
 
 .page-tab--active {
   border-color: var(--accent-color);
   color: var(--accent-color);
-  background: rgba(88, 166, 255, 0.1);
+  background: rgba(3, 222, 130, 0.12);
 }
 
 /* ボリューム条件達成バッジ */
@@ -262,7 +273,8 @@ button:active {
 }
 
 .status {
-  font-size: 0.9rem;
+  font-size: 0.85rem;
+  font-family: var(--font-mono);
   color: var(--text-secondary);
 }
 
@@ -273,14 +285,16 @@ button:active {
   border-radius: 6px;
   padding: 4px 12px;
   font-size: 0.8rem;
+  font-family: var(--font-mono);
   cursor: pointer;
   transition: all 0.2s;
   white-space: nowrap;
 }
 
 .refresh-btn:hover {
-  background: rgba(255, 255, 255, 0.1);
+  background: rgba(3, 222, 130, 0.1);
   color: var(--text-primary);
+  box-shadow: none;
 }
 
 /* Info / Rules */
@@ -310,7 +324,7 @@ button:active {
 }
 
 .info-note {
-  color: #f0883e;
+  color: var(--warning);
   font-size: 0.85rem;
   margin-top: 4px;
 }
@@ -342,7 +356,7 @@ button:active {
 }
 
 .rules-list a:hover {
-  color: #79bbff;
+  color: var(--accent-soft);
 }
 
 /* Reward Table */
@@ -361,6 +375,7 @@ button:active {
   padding: 8px 16px;
   font-size: 0.85rem;
   font-weight: 600;
+  font-family: var(--font-mono);
   cursor: pointer;
   transition: all 0.2s;
 }
@@ -369,26 +384,26 @@ button:active {
   background: rgba(255, 255, 255, 0.08);
 }
 
-/* ティア色: 75M以上=赤, 50M以上=橙, 25M以上=緑, 25M未満=青 */
-.tier-tab--red    { border-color: #f85149; color: #f85149; }
-.tier-tab--orange { border-color: #f0883e; color: #f0883e; }
-.tier-tab--green  { border-color: #3fb950; color: #3fb950; }
-.tier-tab--blue   { border-color: #58a6ff; color: #58a6ff; }
+/* ティア色（RISExパレット）: 75M以上=グリーン, 50M以上=ティール, 25M以上=イエロー, 25M未満=パープル */
+.tier-tab--green  { border-color: #03de82; color: #03de82; }
+.tier-tab--teal   { border-color: #2ed3b7; color: #2ed3b7; }
+.tier-tab--yellow { border-color: #fac515; color: #fac515; }
+.tier-tab--purple { border-color: #7a5af8; color: #a08dfa; }
 
-.tier-tab--red:hover    { background: rgba(248, 81, 73, 0.1); }
-.tier-tab--orange:hover { background: rgba(240, 136, 62, 0.1); }
-.tier-tab--green:hover  { background: rgba(63, 185, 80, 0.1); }
-.tier-tab--blue:hover   { background: rgba(88, 166, 255, 0.1); }
+.tier-tab--green:hover  { background: rgba(3, 222, 130, 0.1); }
+.tier-tab--teal:hover   { background: rgba(46, 211, 183, 0.1); }
+.tier-tab--yellow:hover { background: rgba(250, 197, 21, 0.1); }
+.tier-tab--purple:hover { background: rgba(122, 90, 248, 0.1); }
 
-.tier-tab--red.tier-tab--active    { background: rgba(248, 81, 73, 0.15); }
-.tier-tab--orange.tier-tab--active { background: rgba(240, 136, 62, 0.15); }
-.tier-tab--green.tier-tab--active  { background: rgba(63, 185, 80, 0.15); }
-.tier-tab--blue.tier-tab--active   { background: rgba(88, 166, 255, 0.15); }
+.tier-tab--green.tier-tab--active  { background: rgba(3, 222, 130, 0.15); }
+.tier-tab--teal.tier-tab--active   { background: rgba(46, 211, 183, 0.15); }
+.tier-tab--yellow.tier-tab--active { background: rgba(250, 197, 21, 0.15); }
+.tier-tab--purple.tier-tab--active { background: rgba(122, 90, 248, 0.15); }
 
-.tier-tab--red.tier-tab--selected    { background: rgba(248, 81, 73, 0.3); color: #fff; }
-.tier-tab--orange.tier-tab--selected { background: rgba(240, 136, 62, 0.3); color: #fff; }
-.tier-tab--green.tier-tab--selected  { background: rgba(63, 185, 80, 0.3); color: #fff; }
-.tier-tab--blue.tier-tab--selected   { background: rgba(88, 166, 255, 0.3); color: #fff; }
+.tier-tab--green.tier-tab--selected  { background: rgba(3, 222, 130, 0.3); color: #fff; }
+.tier-tab--teal.tier-tab--selected   { background: rgba(46, 211, 183, 0.3); color: #fff; }
+.tier-tab--yellow.tier-tab--selected { background: rgba(250, 197, 21, 0.3); color: #fff; }
+.tier-tab--purple.tier-tab--selected { background: rgba(122, 90, 248, 0.3); color: #fff; }
 
 .reward-pair {
   display: grid;
@@ -414,7 +429,8 @@ button:active {
   padding: 6px 10px;
   color: var(--text-secondary);
   font-weight: 600;
-  font-size: 0.78rem;
+  font-size: 0.75rem;
+  font-family: var(--font-mono);
   text-transform: uppercase;
   letter-spacing: 0.04em;
   border-bottom: 1px solid var(--glass-border);
@@ -512,7 +528,7 @@ button:active {
     padding: 0 16px;
   }
 
-  .leaderboard-table th, 
+  .leaderboard-table th,
   .leaderboard-table td {
     padding: 12px 10px;
     font-size: 0.85rem;
@@ -546,5 +562,10 @@ button:active {
   .page-tab {
     font-size: 0.72rem;
     padding: 4px 8px;
+  }
+
+  .lang-toggle {
+    top: 10px;
+    right: 12px;
   }
 }

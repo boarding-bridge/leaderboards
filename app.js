@@ -42,7 +42,7 @@ const I18N = {
     entryForm: '大会エントリーは<a href="#" target="_blank" rel="noopener">こちらのフォーム（準備中）</a>より行ってください。',
     formNote: "※賞品発送連絡のためフォーム記入時間違いがないようご注意ください。",
     tradingTitle: "取引条件",
-    condReferral: "公式リファラルコード（準備中）を登録したRISExアカウントによる取引のみが対象となります。",
+    condReferral: '以下の公式リファラルリンクより登録したRISExアカウントによる取引のみが対象となります。<br><a href="https://www.rise.trade/en/invite/risexjp" target="_blank" rel="noopener">https://www.rise.trade/en/invite/risexjp</a>',
     condMinDeposit: "最低入金額は 200 USDC となります。",
     condRoiVolume: "ROI部門のランキング対象となるには $50,000 以上の取引量が必要です。",
     bannerPlaceholder: "🖼️ バナー画像（準備中）",
@@ -92,7 +92,7 @@ const I18N = {
     entryForm: 'Please enter the competition via <a href="#" target="_blank" rel="noopener">this form (coming soon)</a>.',
     formNote: "* Please double-check your form entries; they will be used to contact winners for prize delivery.",
     tradingTitle: "Trading Requirements",
-    condReferral: "Only trades made with a RISEx account registered with the official referral code (coming soon) are eligible.",
+    condReferral: 'Only trades made with a RISEx account registered via the official referral link below are eligible.<br><a href="https://www.rise.trade/en/invite/risexjp" target="_blank" rel="noopener">https://www.rise.trade/en/invite/risexjp</a>',
     condMinDeposit: "The minimum deposit is 200 USDC.",
     condRoiVolume: "A minimum traded volume of $50,000 is required to be ranked in the ROI track.",
     bannerPlaceholder: "🖼️ Banner (coming soon)",
@@ -218,7 +218,7 @@ function renderRewardTables(totalVolume) {
 
   // タブ
   const tabsEl = document.getElementById("tier-tabs");
-  const tierColors = ["tier-tab--red", "tier-tab--orange", "tier-tab--green", "tier-tab--blue"];
+  const tierColors = ["tier-tab--green", "tier-tab--teal", "tier-tab--yellow", "tier-tab--purple"];
   tabsEl.innerHTML = REWARD_TIERS.map((tier, i) =>
     `<button class="tier-tab ${tierColors[i]}${i === activeIdx ? " tier-tab--active tier-tab--selected" : ""}" data-tier="${i}">${tier.label}${i === activeIdx ? t("currentTier") : ""}</button>`
   ).join("");
