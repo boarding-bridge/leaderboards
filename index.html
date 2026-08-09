@@ -13,8 +13,33 @@
   <div class="container">
     <button id="lang-toggle" class="lang-toggle" onclick="toggleLang()">EN</button>
 
-    <header class="animate-fade-in">
-      <h1>Wagyu Bull Run RISEx Cup</h1>
+    <header class="hero animate-fade-in">
+      <img src="assets/risex-logo.svg" alt="" class="hero-art" aria-hidden="true">
+      <img src="assets/risex-logo.svg" alt="RISEx" class="hero-logo">
+      <span class="hero-badge">RISEx Trading Competition</span>
+      <h1>Wagyu Bull Run<br><span class="hero-accent">RISEx Cup</span></h1>
+      <p class="subtitle" data-i18n="heroSubtitle">ROI・Volumeの2部門で賞金を獲得！</p>
+      <div class="hero-stats">
+        <div class="stat-card">
+          <div class="stat-label" data-i18n="statPoolLabel">賞金プール（現在ティア）</div>
+          <div class="stat-value"><span id="hero-pool">2,600</span><span class="stat-unit">USDC</span></div>
+          <div class="stat-note" id="hero-pool-note">1,300 USDC × 2部門・総取引量で変動</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label" data-i18n="statPeriodLabel">大会期間</div>
+          <div class="stat-value" data-i18n="statPeriodValue">2026年8月</div>
+          <div class="stat-note" data-i18n="statPeriodNote">2週間・日程調整中</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label" data-i18n="statWagyuLabel">Wagyuギフト</div>
+          <div class="stat-value" data-i18n="statWagyuValue">各部門 上位3名</div>
+          <div class="stat-note" data-i18n="statWagyuNote">¥10,000相当の近江牛</div>
+        </div>
+      </div>
+      <a class="hero-cta" href="https://www.rise.trade/en/invite/risexjp" target="_blank" rel="noopener">
+        <span class="cta-main" data-i18n="ctaJoin">公式リファラルで登録する →</span>
+        <span class="cta-note" data-i18n="ctaNote">招待コード: risexjp</span>
+      </a>
     </header>
 
     <!-- 大会概要・取引条件 -->

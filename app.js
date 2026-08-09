@@ -36,6 +36,17 @@ const INITIAL_DISPLAY_COUNT = 10;
 
 const I18N = {
   ja: {
+    heroSubtitle: "ROI・Volumeの2部門で賞金を獲得！",
+    statPoolLabel: "賞金プール（現在ティア）",
+    statPoolNote: "{n} USDC × 2部門・総取引量で変動",
+    statPeriodLabel: "大会期間",
+    statPeriodValue: "2026年8月",
+    statPeriodNote: "2週間・日程調整中",
+    statWagyuLabel: "Wagyuギフト",
+    statWagyuValue: "各部門 上位3名",
+    statWagyuNote: "¥10,000相当の近江牛",
+    ctaJoin: "公式リファラルで登録する →",
+    ctaNote: "招待コード: risexjp",
     overviewTitle: "大会概要",
     entryPeriod: "エントリー期間：調整中",
     compPeriod: "大会期間：2026年8月（2週間・日程調整中）",
@@ -86,6 +97,17 @@ const I18N = {
     qualifyTitle: "Vol. $50,000+ 達成",
   },
   en: {
+    heroSubtitle: "Win prizes across the ROI and Volume tracks!",
+    statPoolLabel: "Prize Pool (current tier)",
+    statPoolNote: "{n} USDC × 2 tracks, varies with total volume",
+    statPeriodLabel: "Period",
+    statPeriodValue: "August 2026",
+    statPeriodNote: "2 weeks, dates TBD",
+    statWagyuLabel: "Wagyu Gift",
+    statWagyuValue: "Top 3 in each track",
+    statWagyuNote: "Omi beef worth ¥10,000",
+    ctaJoin: "Sign up via official referral →",
+    ctaNote: "Referral code: risexjp",
     overviewTitle: "Overview",
     entryPeriod: "Entry period: TBD",
     compPeriod: "Competition period: August 2026 (2 weeks, dates TBD)",
@@ -208,7 +230,20 @@ function isRoiEligible(item) {
 
 // ---- リワードテーブル -------------------------------------------------
 
+// ヒーローの賞金プールカードを現在ティアに合わせて更新する
+function updateHeroPool(totalVolume) {
+  const poolEl = document.getElementById("hero-pool");
+  if (!poolEl) return;
+  const idx = totalVolume != null ? getActiveTierIndex(totalVolume) : REWARD_TIERS.length - 1;
+  const perTrack = REWARD_TIERS[idx].prizes.reduce((sum, p) => sum + p, 0);
+  poolEl.textContent = (perTrack * 2).toLocaleString();
+  const noteEl = document.getElementById("hero-pool-note");
+  if (noteEl) noteEl.textContent = t("statPoolNote").replace("{n}", perTrack.toLocaleString());
+}
+
 function renderRewardTables(totalVolume) {
+  updateHeroPool(totalVolume);
+
   const volEl = document.getElementById("reward-vol");
   if (volEl && totalVolume != null) {
     volEl.textContent = `$${totalVolume.toLocaleString(undefined, { maximumFractionDigits: 0 })}`;

@@ -30,6 +30,147 @@ body {
   overflow-x: hidden;
 }
 
+/* ヒーローセクション（TxFlowキャンペーンページ風） */
+.hero {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid var(--glass-border);
+  border-radius: 16px;
+  padding: 48px 40px;
+  margin-bottom: 30px;
+  background:
+    radial-gradient(ellipse 60% 80% at 85% 20%, rgba(3, 222, 130, 0.08), transparent 70%),
+    linear-gradient(135deg, rgba(18, 22, 28, 0.9), rgba(12, 14, 18, 0.95));
+}
+
+/* ヒーロー右側のロゴアート */
+.hero-art {
+  position: absolute;
+  top: 50%;
+  right: -6%;
+  width: 60%;
+  transform: translateY(-50%) rotate(-6deg);
+  opacity: 0.06;
+  pointer-events: none;
+  user-select: none;
+}
+
+.hero-logo {
+  height: 30px;
+  display: block;
+  margin-bottom: 24px;
+}
+
+.hero-badge {
+  display: inline-block;
+  border: 1px solid var(--glass-border);
+  border-radius: 999px;
+  background: rgba(3, 222, 130, 0.08);
+  color: var(--accent-soft);
+  font-size: 0.78rem;
+  font-weight: 600;
+  font-family: var(--font-mono);
+  letter-spacing: 0.04em;
+  padding: 6px 16px;
+  margin-bottom: 20px;
+}
+
+.hero h1 {
+  font-size: 3rem;
+  font-weight: 800;
+  line-height: 1.15;
+  color: #ffffff;
+  margin-bottom: 14px;
+}
+
+.hero h1 .hero-accent {
+  color: var(--accent-color);
+  text-shadow: 0 0 28px var(--accent-glow);
+}
+
+.hero .subtitle {
+  color: var(--text-primary);
+  font-size: 1.05rem;
+  font-weight: 600;
+  margin-bottom: 28px;
+}
+
+.hero-stats {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-bottom: 28px;
+}
+
+.stat-card {
+  border: 1px solid var(--glass-border);
+  border-radius: 12px;
+  background: rgba(12, 14, 18, 0.65);
+  padding: 14px 20px;
+  min-width: 180px;
+}
+
+.stat-label {
+  color: var(--text-secondary);
+  font-size: 0.75rem;
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.stat-value {
+  color: #ffffff;
+  font-size: 1.5rem;
+  font-weight: 800;
+  line-height: 1.2;
+}
+
+.stat-value .stat-unit {
+  color: var(--accent-color);
+  font-size: 0.85rem;
+  font-weight: 700;
+  margin-left: 4px;
+}
+
+.stat-note {
+  color: var(--text-secondary);
+  font-size: 0.7rem;
+  margin-top: 2px;
+}
+
+.hero-cta {
+  display: inline-block;
+  background: var(--accent-color);
+  color: #0c0e12;
+  border-radius: 10px;
+  padding: 12px 32px;
+  text-align: center;
+  text-decoration: none;
+  font-weight: 700;
+  transition: opacity 0.2s, box-shadow 0.2s, transform 0.1s;
+  box-shadow: 0 0 20px rgba(3, 222, 130, 0.25);
+}
+
+.hero-cta:hover {
+  opacity: 0.9;
+  box-shadow: 0 0 28px var(--accent-glow);
+}
+
+.hero-cta:active {
+  transform: scale(0.98);
+}
+
+.hero-cta .cta-main {
+  display: block;
+  font-size: 1rem;
+}
+
+.hero-cta .cta-note {
+  display: block;
+  font-size: 0.72rem;
+  font-weight: 600;
+  opacity: 0.75;
+}
+
 .container {
   max-width: 1000px;
   margin: 0 auto;
@@ -37,12 +178,14 @@ body {
   position: relative;
 }
 
-/* 言語切り替えボタン */
+/* 言語切り替えボタン（フローティング） */
 .lang-toggle {
-  position: absolute;
+  position: fixed;
   top: 16px;
   right: 20px;
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(18, 22, 28, 0.85);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
   border: 1px solid var(--glass-border);
   color: var(--text-secondary);
   border-radius: 6px;
@@ -52,7 +195,7 @@ body {
   font-family: var(--font-mono);
   cursor: pointer;
   transition: all 0.2s;
-  z-index: 10;
+  z-index: 100;
 }
 
 .lang-toggle:hover {
@@ -76,24 +219,6 @@ body {
   font-size: 0.85rem;
 }
 
-header {
-  text-align: center;
-  margin-bottom: 60px;
-}
-
-h1 {
-  font-size: 2.5rem;
-  font-weight: 800;
-  background: linear-gradient(90deg, #ffffff, var(--accent-color));
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  margin-bottom: 10px;
-}
-
-p.subtitle {
-  color: var(--text-secondary);
-  font-size: 1.1rem;
-}
 
 .dashboard-card {
   background: var(--card-bg);
@@ -499,12 +624,39 @@ button:active {
     padding: 20px 10px;
   }
 
-  h1 {
-    font-size: 1.8rem;
+  .hero {
+    padding: 32px 20px;
   }
 
-  p.subtitle {
+  .hero h1 {
+    font-size: 2rem;
+  }
+
+  .hero .subtitle {
     font-size: 0.9rem;
+  }
+
+  .hero-art {
+    width: 90%;
+    right: -25%;
+  }
+
+  .hero-stats {
+    gap: 10px;
+  }
+
+  .stat-card {
+    flex: 1 1 45%;
+    min-width: 140px;
+    padding: 12px 14px;
+  }
+
+  .stat-value {
+    font-size: 1.2rem;
+  }
+
+  .hero-cta {
+    display: block;
   }
 
   .controls {
@@ -567,5 +719,6 @@ button:active {
   .lang-toggle {
     top: 10px;
     right: 12px;
+    width: auto; /* モバイルの button { width: 100% } を打ち消す */
   }
 }
