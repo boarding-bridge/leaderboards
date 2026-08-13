@@ -69,19 +69,18 @@ const I18N = {
     rule3: "リワード獲得には最低 200 USDC の入金が必要です。",
     rule4: "ROI部門のランキング対象となるには $50,000 以上の取引量が必要です。",
     rule5: "ROIは「PnL ÷（大会開始時エクイティ＋期間中入金）」で算出します。期間中の出金はPnLに加算され、分母からは差し引かれません。",
-    rule6: "同率の場合、ROI部門は取引量、Volume部門は対象資本により順位を決定します。",
+    rule6: "同率の場合、ROI部門は取引量、Volume部門は合計入金額により順位を決定します。",
     rule7: "ウォッシュトレード・自己約定と判断された取引はランキング対象外となります。",
     rule8: "最終的な入賞者の確定および失格の判断はRISExが行います。",
     rule9: 'ギフトコードは<a href="https://x.com/wagyuinternat?s=20" target="_blank" rel="noopener">wagyu international</a>の近江牛と引き換えることができます。',
     rule10: '賞品発送連絡はXのDMを通じて<a href="https://x.com/bb_jpdao" target="_blank" rel="noopener">bb_jpdao</a>より連絡します。',
-    rule11: "Xで連絡がとれない受賞者は送付時点レートで同額の $JPYC を提出されたウォレットへ送付します。",
-    rule12: "海外在住の受賞者は送付時点レートで同額の $JPYC を提出されたウォレットへ送付します。",
-    rule13: "本大会は、仮想通貨取引の技術向上と楽しみを目的としたイベントです。",
-    rule14: "実際の資金を用いたトレードが行われますが参加者自身の責任において参加ください。",
-    rule15: "仮想通貨の価格は常に変動しており、元本の損失を含むリスクがあります。運営は取引による損失やトラブル等について一切の責任を負いません。",
-    rule16: "RISExの利用規約や法令を遵守のうえ、ご参加ください。規約違反が確認された場合は、参加資格の剥奪や賞品授与の取り消しとなる場合があります。",
-    rule17: "本イベントの内容やルールは、予告なく変更・中止となる場合があります。あらかじめご了承ください。",
-    rule18: "同一人物の複数アカウントでの参加、複数口座間の両建て等の不正行為が確認された場合は、順位や賞品授与の対象から除外します。",
+    rule11: "Xで連絡がとれない受賞者は送付時点レートで同額の $USDC を提出されたウォレットへ送付します。",
+    rule12: "本大会は、仮想通貨取引の技術向上と楽しみを目的としたイベントです。",
+    rule13: "実際の資金を用いたトレードが行われますが参加者自身の責任において参加ください。",
+    rule14: "仮想通貨の価格は常に変動しており、元本の損失を含むリスクがあります。運営は取引による損失やトラブル等について一切の責任を負いません。",
+    rule15: "RISExの利用規約や法令を遵守のうえ、ご参加ください。規約違反が確認された場合は、参加資格の剥奪や賞品授与の取り消しとなる場合があります。",
+    rule16: "本イベントの内容やルールは、予告なく変更・中止となる場合があります。あらかじめご了承ください。",
+    rule17: "同一人物の複数アカウントでの参加、複数口座間の両建て等の不正行為が確認された場合は、順位や賞品授与の対象から除外します。",
     // 動的テキスト
     statusLoading: "データを読み込んでいます...",
     statusFetching: "データを取得しています...",
@@ -130,19 +129,18 @@ const I18N = {
     rule3: "A minimum deposit of 200 USDC is required to be eligible for rewards.",
     rule4: "A minimum traded volume of $50,000 is required to be ranked in the ROI track.",
     rule5: "ROI is calculated as PnL ÷ (starting equity + deposits during the competition). Withdrawals during the competition are added back to PnL and are not deducted from the denominator.",
-    rule6: "Ties are broken by traded volume in the ROI track and by qualifying capital in the Volume track.",
+    rule6: "Ties are broken by traded volume in the ROI track and by total deposits in the Volume track.",
     rule7: "Trades deemed wash trading or self-matching will be excluded from the rankings.",
     rule8: "RISEx holds final authority on winner determination and disqualification.",
     rule9: 'Gift codes can be exchanged for Omi beef from <a href="https://x.com/wagyuinternat?s=20" target="_blank" rel="noopener">wagyu international</a>.',
     rule10: 'Winners will be contacted by <a href="https://x.com/bb_jpdao" target="_blank" rel="noopener">bb_jpdao</a> via X DM regarding prize delivery.',
-    rule11: "Winners who cannot be reached on X will receive the equivalent amount in $JPYC (at the rate at the time of sending) to the submitted wallet.",
-    rule12: "Winners residing outside Japan will receive the equivalent amount in $JPYC (at the rate at the time of sending) to the submitted wallet.",
-    rule13: "This competition is an event intended to improve trading skills and to be enjoyed.",
-    rule14: "Trades involve real funds; please participate at your own risk.",
-    rule15: "Cryptocurrency prices fluctuate constantly and there is a risk of loss, including loss of principal. The organizers accept no responsibility for any losses or issues arising from trading.",
-    rule16: "Please comply with RISEx's terms of service and applicable laws. Violations may result in disqualification or forfeiture of prizes.",
-    rule17: "The content and rules of this event are subject to change or cancellation without notice.",
-    rule18: "Participation with multiple accounts by the same person, hedging across accounts, or other fraudulent activity will result in exclusion from the rankings and prizes.",
+    rule11: "Winners who cannot be reached on X will receive the equivalent amount in $USDC (at the rate at the time of sending) to the submitted wallet.",
+    rule12: "This competition is an event intended to improve trading skills and to be enjoyed.",
+    rule13: "Trades involve real funds; please participate at your own risk.",
+    rule14: "Cryptocurrency prices fluctuate constantly and there is a risk of loss, including loss of principal. The organizers accept no responsibility for any losses or issues arising from trading.",
+    rule15: "Please comply with RISEx's terms of service and applicable laws. Violations may result in disqualification or forfeiture of prizes.",
+    rule16: "The content and rules of this event are subject to change or cancellation without notice.",
+    rule17: "Participation with multiple accounts by the same person, hedging across accounts, or other fraudulent activity will result in exclusion from the rankings and prizes.",
     // 動的テキスト
     statusLoading: "Loading data...",
     statusFetching: "Fetching data...",
@@ -398,10 +396,10 @@ function render() {
     renderRoiRanking([...eligible, ...rest], eligible.length, tier.prizes.length);
 
     // Volumeランキング（Volume降順）
-    // TODO: 同率時は qualifying capital で決定とあるが大小の方向が未確定（要RISEx確認）。暫定で小さい方を上位とする
+    // TODO: 同率時は合計入金額（deposits）で決定（規約）。大小の方向が未確定のため暫定で小さい方を上位とする
     const byVol = (a, b) =>
       ((b.tradedVolume || 0) - (a.tradedVolume || 0)) ||
-      ((a.qualifyingCapital || 0) - (b.qualifyingCapital || 0));
+      ((a.deposits || 0) - (b.deposits || 0));
     const volSorted = [...participants].sort(byVol);
     renderVolRanking(volSorted, totalVolume, tier.prizes.length);
   }
