@@ -27,8 +27,8 @@
         </div>
         <div class="stat-card">
           <div class="stat-label" data-i18n="statPeriodLabel">大会期間</div>
-          <div class="stat-value" data-i18n="statPeriodValue">2026年8月</div>
-          <div class="stat-note" data-i18n="statPeriodNote">2週間・日程調整中</div>
+          <div class="stat-value" data-i18n="statPeriodValue">8/18 - 9/7</div>
+          <div class="stat-note" data-i18n="statPeriodNote">2026年・9月7日 23:59 JSTまで</div>
         </div>
         <div class="stat-card">
           <div class="stat-label" data-i18n="statWagyuLabel">Wagyuギフト</div>
@@ -46,9 +46,9 @@
     <div class="dashboard-card animate-fade-in" style="animation-delay: 0.12s;">
       <h2 class="section-title" data-i18n="overviewTitle">大会概要</h2>
       <ul class="info-list">
-        <li data-i18n="entryPeriod">エントリー期間：調整中</li>
-        <li data-i18n="compPeriod">大会期間：2026年8月（2週間・日程調整中）</li>
-        <li data-i18n-html="entryForm">大会エントリーは<a href="#" target="_blank" rel="noopener">こちらのフォーム（準備中）</a>より行ってください。</li>
+        <li data-i18n="entryPeriod">エントリー期間：本日〜9月5日 23:59 JST</li>
+        <li data-i18n="compPeriod">大会期間：2026年8月18日〜9月7日 23:59 JST</li>
+        <li data-i18n-html="entryForm">大会エントリーは<a href="https://docs.google.com/forms/d/e/1FAIpQLSddN0vykfKBeSTACEPUVR702k2Ex1Fb_2RC50hLBktuiW6qEw/viewform?usp=sharing&ouid=112041396231013836077" target="_blank" rel="noopener">こちらのフォーム</a>より行ってください。</li>
       </ul>
       <p class="info-note" data-i18n="formNote">※賞品発送連絡のためフォーム記入時間違いがないようご注意ください。</p>
 
@@ -62,13 +62,17 @@
       <!-- バナー画像が用意でき次第、このプレースホルダを以下に差し替える
       <img src="assets/banner.png" alt="大会バナー" class="banner-thumb" onclick="document.getElementById('banner-modal').classList.add('active')">
       -->
+      <!-- バナーは非表示中。戻す場合は以下のコメントを解除する
       <div class="banner-placeholder" data-i18n="bannerPlaceholder">🖼️ バナー画像（準備中）</div>
+      -->
     </div>
 
-    <!-- バナー拡大表示 -->
+    <!-- バナー拡大表示（バナー非表示中のためコメントアウト）
     <div id="banner-modal" class="modal-overlay" onclick="this.classList.remove('active')">
       <img src="assets/banner.png" alt="大会バナー（拡大）" class="modal-image">
     </div>
+    -->
+
 
     <!-- リワードテーブル -->
     <div class="dashboard-card animate-fade-in" style="animation-delay: 0.14s;">
@@ -143,7 +147,7 @@
     <div class="dashboard-card rules-section animate-fade-in" style="animation-delay: 0.4s;">
       <h2 class="section-title" data-i18n="rulesTitle">大会規約</h2>
       <ul class="rules-list">
-        <li data-i18n="rule1">大会期間は2026年8月の2週間（日程調整中）となります。</li>
+        <li data-i18n="rule1">大会期間は2026年8月18日〜9月7日 23:59 JSTとなります。</li>
         <li data-i18n="rule2">公式リファラルコードを登録したアカウントによる取引のみがランキング・賞金ティア判定の対象となります。</li>
         <li data-i18n="rule3">リワード獲得には最低 200 USDC の入金が必要です。</li>
         <li data-i18n="rule4">ROI部門のランキング対象となるには $50,000 以上の取引量が必要です。</li>
