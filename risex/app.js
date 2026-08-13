@@ -58,11 +58,11 @@ const I18N = {
     condRoiVolume: "ROI部門のランキング対象となるには $50,000 以上の取引量が必要です。",
     bannerPlaceholder: "🖼️ バナー画像（準備中）",
     rewardCurrentVol: "現在の Total Volume: ",
-    rewardNote: "※賞金プールは大会期間中の総取引量（対象アカウントのみ）に応じて4ティアで変動します。<br>※各部門の上位3名にはWagyuギフト（¥10,000相当）が贈られます。",
+    rewardNote: "●賞金プールは大会期間中の総取引量（対象アカウントのみ）に応じて4ティアで変動します。<br>●各部門の上位3名にはWagyuギフト（¥10,000相当）が贈られます。",
     refresh: "🔄 更新",
-    roiNote: "✅ … ROI部門の最低取引量（$50,000）を達成すると名前に ✅ がつきます。未達成の方はランキング下部に表示されます。<br>Capital … ROI計算の分母（大会開始時のエクイティ＋期間中の入金）。<span class=\"baseline-warn\">赤字</span>は最低入金額（200 USDC）未達です。",
+    roiNote: "●CapitalはROI計算の分母となり、計算式は（大会開始時のエクイティ＋期間中の入金）です。<br>●最低取引量（$50,000）を達成すると名前に ✅ がつきます。<br>●最低入金額（200 USDC）を下回っている場合、名前がグレーで表示されます。<br>●両条件を満たした場合、ランキング内に表示されます。",
     volTotalLabel: "Total Volume: ",
-    volNote: "<span class=\"baseline-warn\">赤字</span>は最低入金額（200 USDC）未達のためリワード対象外です。",
+    volNote: "●最低入金額（200 USDC）を下回っている場合、名前がグレーで表示されます。<br>●条件を満たした場合、ランキング内に表示されます。",
     rulesTitle: "大会規約",
     rule1: "大会期間は2026年8月18日〜9月7日 23:59 JSTとなります。",
     rule2: "公式リファラルコードを登録したアカウントによる取引のみがランキング・賞金ティア判定の対象となります。",
@@ -119,11 +119,11 @@ const I18N = {
     condRoiVolume: "A minimum traded volume of $50,000 is required to be ranked in the ROI track.",
     bannerPlaceholder: "🖼️ Banner (coming soon)",
     rewardCurrentVol: "Current Total Volume: ",
-    rewardNote: "* The prize pool varies across four tiers based on the total trading volume (coded accounts only) during the competition.<br>* The top three in each track will also receive a Wagyu gift (worth ¥10,000).",
+    rewardNote: "●The prize pool varies across four tiers based on the total trading volume (coded accounts only) during the competition.<br>●The top three in each track will also receive a Wagyu gift (worth ¥10,000).",
     refresh: "🔄 Refresh",
-    roiNote: "✅ … Shown next to traders who have reached the ROI-track minimum volume ($50,000). Traders below the threshold are listed at the bottom.<br>Capital … The ROI denominator (starting equity + deposits during the competition). <span class=\"baseline-warn\">Red</span> indicates the minimum deposit (200 USDC) has not been met.",
+    roiNote: "●Capital is the ROI denominator, calculated as (starting equity + deposits during the competition).<br>●Traders who reach the minimum volume ($50,000) get a ✅ next to their name.<br>●Traders below the minimum deposit (200 USDC) are shown with a gray name.<br>●Traders meeting both conditions are shown in the ranking.",
     volTotalLabel: "Total Volume: ",
-    volNote: "<span class=\"baseline-warn\">Red</span> indicates the minimum deposit (200 USDC) has not been met and the trader is not eligible for rewards.",
+    volNote: "●Traders below the minimum deposit (200 USDC) are shown with a gray name.<br>●Traders meeting the condition are shown in the ranking.",
     rulesTitle: "Terms & Conditions",
     rule1: "The competition will run from Aug 18 to Sep 7, 2026, until 23:59 JST.",
     rule2: "Only trades made by accounts registered with the official referral code count toward the rankings and prize tier determination.",
@@ -466,7 +466,7 @@ function renderRoiPage(body, data, page, eligibleCount, prizeCount) {
     const warnClass = minDepositMet(item) ? "" : " baseline-warn";
 
     tr.innerHTML = `
-      <td>${rankCell(index)}</td>
+      <td>${index < eligibleCount ? rankCell(index) : "-"}</td>
       <td class="${warnClass}">${traderCell(item)}</td>
       <td class="${warnClass}">$${capital.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
       <td class="${roiClass}">${(item.roi || 0).toFixed(2)}%</td>
@@ -492,18 +492,23 @@ function renderVolPage(body, data, page, prizeCount) {
   const start = page * INITIAL_DISPLAY_COUNT;
   const slice = data.slice(start, start + INITIAL_DISPLAY_COUNT);
 
+  // 順位は最低入金達成者のみで採番し、未達者は "-" 表示（リワード対象外）
+  let qualifiedRank = data.slice(0, start).filter(minDepositMet).length;
+
   slice.forEach((item, i) => {
-    const index = start + i;
     const tr = document.createElement("tr");
     tr.className = "animate-fade-in";
     tr.style.animationDelay = `${i * 0.03}s`;
-    if (index < prizeCount) tr.classList.add("rank-prize");
+
+    const met = minDepositMet(item);
+    if (met) qualifiedRank++;
+    if (met && qualifiedRank <= prizeCount) tr.classList.add("rank-prize");
 
     const vol = item.tradedVolume || 0;
-    const warnClass = minDepositMet(item) ? "" : " baseline-warn";
+    const warnClass = met ? "" : " baseline-warn";
 
     tr.innerHTML = `
-      <td>${rankCell(index)}</td>
+      <td>${met ? rankCell(qualifiedRank - 1) : "-"}</td>
       <td class="${warnClass}">${traderCell(item)}</td>
       <td>$${vol.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
     `;

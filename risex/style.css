@@ -322,7 +322,8 @@ button:active {
 
 .roi-positive { color: var(--success); }
 .roi-negative { color: var(--danger); }
-.baseline-warn { color: var(--danger); }
+/* 最低入金額（200 USDC）未達の表示。ROI/PnLの赤字と混同しないようグレーにする */
+.baseline-warn { color: var(--text-secondary); }
 
 .blind-message {
   text-align: center;
