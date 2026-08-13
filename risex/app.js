@@ -1,25 +1,25 @@
-// リワードテーブルデータ（RISEx提案書 v2 Revised 準拠・4ティア）
+// リワードテーブルデータ（RISEx提案書 v3 準拠・4ティア）
 // 両部門（ROI / Volume）とも同一の賞金構成のため prizes を共用する
 const REWARD_TIERS = [
   {
     label: "Total Volume ≥ $75M",
     threshold: 75_000_000,
-    prizes: [1500, 1000, 700, 400, 400, 250, 250, 250, 250, 250, 150, 150, 150, 150, 150],
+    prizes: [1200, 800, 550, 300, 300, 200, 200, 200, 200, 200, 120, 120, 120, 120, 120],
   },
   {
     label: "$50M 〜 $75M",
     threshold: 50_000_000,
-    prizes: [1000, 650, 450, 300, 300, 300, 125, 125, 125, 125, 125, 125],
+    prizes: [800, 520, 360, 240, 240, 240, 100, 100, 100, 100, 100, 100],
   },
   {
     label: "$25M 〜 $50M",
     threshold: 25_000_000,
-    prizes: [900, 500, 350, 110, 110, 110, 110, 110],
+    prizes: [700, 400, 250, 80, 80, 80, 80, 80],
   },
   {
     label: "Total Volume < $25M",
     threshold: 0,
-    prizes: [450, 300, 200, 175, 175],
+    prizes: [350, 250, 150, 125, 125],
   },
 ];
 
@@ -69,7 +69,7 @@ const I18N = {
     rule3: "リワード獲得には最低 200 USDC の入金が必要です。",
     rule4: "ROI部門のランキング対象となるには $50,000 以上の取引量が必要です。",
     rule5: "ROIは「PnL ÷（大会開始時エクイティ＋期間中入金）」で算出します。期間中の出金はPnLに加算され、分母からは差し引かれません。",
-    rule6: "同率の場合、ROI部門は取引量、Volume部門は合計入金額により順位を決定します。",
+    rule6: "同率の場合、ROI部門は取引量、Volume部門は対象資本（大会開始時エクイティ＋期間中入金の合計）により順位を決定します。",
     rule7: "ウォッシュトレード・自己約定と判断された取引はランキング対象外となります。",
     rule8: "最終的な入賞者の確定および失格の判断はRISExが行います。",
     rule9: 'ギフトコードは<a href="https://x.com/wagyuinternat?s=20" target="_blank" rel="noopener">wagyu international</a>の近江牛と引き換えることができます。',
@@ -129,7 +129,7 @@ const I18N = {
     rule3: "A minimum deposit of 200 USDC is required to be eligible for rewards.",
     rule4: "A minimum traded volume of $50,000 is required to be ranked in the ROI track.",
     rule5: "ROI is calculated as PnL ÷ (starting equity + deposits during the competition). Withdrawals during the competition are added back to PnL and are not deducted from the denominator.",
-    rule6: "Ties are broken by traded volume in the ROI track and by total deposits in the Volume track.",
+    rule6: "Ties are broken by traded volume in the ROI track and by qualifying capital (starting equity + deposits during the competition) in the Volume track.",
     rule7: "Trades deemed wash trading or self-matching will be excluded from the rankings.",
     rule8: "RISEx holds final authority on winner determination and disqualification.",
     rule9: 'Gift codes can be exchanged for Omi beef from <a href="https://x.com/wagyuinternat?s=20" target="_blank" rel="noopener">wagyu international</a>.',
@@ -396,10 +396,10 @@ function render() {
     renderRoiRanking([...eligible, ...rest], eligible.length, tier.prizes.length);
 
     // Volumeランキング（Volume降順）
-    // TODO: 同率時は合計入金額（deposits）で決定（規約）。大小の方向が未確定のため暫定で小さい方を上位とする
+    // TODO: 同率時は qualifying capital で決定（RISEx仕様 v3）。大小の方向が未確定のため暫定で小さい方を上位とする
     const byVol = (a, b) =>
       ((b.tradedVolume || 0) - (a.tradedVolume || 0)) ||
-      ((a.deposits || 0) - (b.deposits || 0));
+      ((a.qualifyingCapital || 0) - (b.qualifyingCapital || 0));
     const volSorted = [...participants].sort(byVol);
     renderVolRanking(volSorted, totalVolume, tier.prizes.length);
   }
