@@ -45,13 +45,34 @@ const I18N = {
     statWagyuLabel: "Wagyuギフト",
     statWagyuValue: "各部門 上位3名",
     statWagyuNote: "¥10,000相当の近江牛",
-    ctaJoin: "公式リファラルで登録する →",
-    ctaNote: "招待コード: risexjp",
+    ctaJoin: "トレード大会に参加する →",
+    ctaNote: "エントリーフォームが開きます",
     overviewTitle: "大会概要",
     entryPeriod: "エントリー期間：本日〜9月5日 23:59 JST",
     compPeriod: "大会期間：2026年8月18日〜9月7日 23:59 JST",
-    entryForm: '大会エントリーは<a href="https://docs.google.com/forms/d/e/1FAIpQLSddN0vykfKBeSTACEPUVR702k2Ex1Fb_2RC50hLBktuiW6qEw/viewform?usp=sharing&ouid=112041396231013836077" target="_blank" rel="noopener">こちらのフォーム</a>より行ってください。',
+    entryForm: '大会エントリーは<a href="#" onclick="openEntryModal(); return false;">こちらのエントリーフォーム</a>より行ってください。',
     formNote: "※賞品発送連絡のためフォーム記入時間違いがないようご注意ください。",
+    // エントリーフォーム
+    entryModalTitle: "大会エントリー",
+    entryNameLabel: "参加名",
+    entryNamePh: "リーダーボードでの表示名",
+    entryAddressLabel: "RISExアドレス",
+    entryAddressNote: '専用コード「risexjp」により登録されたアカウントのみ有効です。未登録の場合は<a href="https://www.rise.trade/en/invite/risexjp" target="_blank" rel="noopener">公式リファラル（招待コード: risexjp）</a>から登録してください。',
+    entryXLabel: "Xアカウント",
+    entryXAuthBtn: "Xで認証する",
+    entryXVerified: "認証済み: ",
+    entrySubmit: "エントリーする",
+    entrySubmitting: "送信中...",
+    entrySuccess: "✅ エントリーを受け付けました！",
+    entrySuccessNote: "賞品発送等の連絡は認証済みXアカウントのDMに行います。",
+    entryClose: "閉じる",
+    entryErrName: "参加名を入力してください。",
+    entryErrAddress: "RISExアドレスは 0x から始まる42文字のEVMアドレスを入力してください。",
+    entryErrX: "Xアカウントの認証を完了してください。",
+    entryErrXFailed: "X認証に失敗しました。再度お試しください。",
+    entryErrPopup: "ポップアップがブロックされました。ブラウザの設定をご確認ください。",
+    entryErrNetwork: "送信に失敗しました。時間をおいて再度お試しください。",
+    entryErrApiUnset: "エントリー受付は現在準備中です。しばらくお待ちください。",
     tradingTitle: "取引条件",
     condReferral: '以下の公式リファラルリンクより登録したRISExアカウントによる取引のみが対象となります。<br><a href="https://www.rise.trade/en/invite/risexjp" target="_blank" rel="noopener">https://www.rise.trade/en/invite/risexjp</a>',
     condMinDeposit: "最低入金額は 200 USDC となります。",
@@ -105,13 +126,34 @@ const I18N = {
     statWagyuLabel: "Wagyu Gift",
     statWagyuValue: "Top 3 in each track",
     statWagyuNote: "Omi beef worth ¥10,000",
-    ctaJoin: "Sign up via official referral →",
-    ctaNote: "Referral code: risexjp",
+    ctaJoin: "Join the Trading Competition →",
+    ctaNote: "Opens the entry form",
     overviewTitle: "Overview",
     entryPeriod: "Entry period: Today - Sep 5, 2026, 23:59 JST",
     compPeriod: "Competition period: Aug 18 - Sep 7, 2026, 23:59 JST",
-    entryForm: 'Please enter the competition via <a href="https://docs.google.com/forms/d/e/1FAIpQLSddN0vykfKBeSTACEPUVR702k2Ex1Fb_2RC50hLBktuiW6qEw/viewform?usp=sharing&ouid=112041396231013836077" target="_blank" rel="noopener">this form</a>.',
+    entryForm: 'Please enter the competition via <a href="#" onclick="openEntryModal(); return false;">this entry form</a>.',
     formNote: "* Please double-check your form entries; they will be used to contact winners for prize delivery.",
+    // Entry form
+    entryModalTitle: "Competition Entry",
+    entryNameLabel: "Display Name",
+    entryNamePh: "Name shown on the leaderboard",
+    entryAddressLabel: "RISEx Address",
+    entryAddressNote: 'Only accounts registered with the referral code "risexjp" are eligible. If you have not registered yet, sign up via the <a href="https://www.rise.trade/en/invite/risexjp" target="_blank" rel="noopener">official referral link (code: risexjp)</a>.',
+    entryXLabel: "X Account",
+    entryXAuthBtn: "Verify with X",
+    entryXVerified: "Verified: ",
+    entrySubmit: "Submit Entry",
+    entrySubmitting: "Submitting...",
+    entrySuccess: "✅ Your entry has been received!",
+    entrySuccessNote: "Winners will be contacted via DM on the verified X account.",
+    entryClose: "Close",
+    entryErrName: "Please enter your display name.",
+    entryErrAddress: "Please enter a valid 42-character EVM address starting with 0x.",
+    entryErrX: "Please verify your X account first.",
+    entryErrXFailed: "X verification failed. Please try again.",
+    entryErrPopup: "The popup was blocked. Please check your browser settings.",
+    entryErrNetwork: "Failed to submit. Please try again later.",
+    entryErrApiUnset: "Entry submission is being prepared. Please check back soon.",
     tradingTitle: "Trading Requirements",
     condReferral: 'Only trades made with a RISEx account registered via the official referral link below are eligible.<br><a href="https://www.rise.trade/en/invite/risexjp" target="_blank" rel="noopener">https://www.rise.trade/en/invite/risexjp</a>',
     condMinDeposit: "The minimum deposit is 200 USDC.",
@@ -171,8 +213,15 @@ function applyI18n() {
   document.querySelectorAll("[data-i18n-html]").forEach((el) => {
     el.innerHTML = t(el.dataset.i18nHtml);
   });
+  document.querySelectorAll("[data-i18n-ph]").forEach((el) => {
+    el.placeholder = t(el.dataset.i18nPh);
+  });
   const btn = document.getElementById("lang-toggle");
   if (btn) btn.textContent = currentLang === "ja" ? "EN" : "日本語";
+  updateXAuthStatus();
+  // 表示中のエントリーフォームエラーも言語に追従させる
+  const errEl = document.getElementById("entry-error");
+  if (errEl && errEl.dataset.errKey) errEl.textContent = t(errEl.dataset.errKey);
 }
 
 function toggleLang() {
@@ -198,6 +247,188 @@ function setStatus(key, arg = null) {
     el.innerText = `${t("lastUpdated")}: ${new Date(arg).toLocaleString(locale)}`;
   } else {
     el.innerText = t(key);
+  }
+}
+
+// ---- エントリーフォーム -----------------------------------------------
+
+// エントリー登録先（Supabase）。X認証はSupabase Auth（X OAuth 2.0）、
+// 登録は entries テーブルへのinsert（RLSにより認証済みユーザーのみ可）
+const SUPABASE_URL = "https://zynxzpbcqqwhumggdama.supabase.co";
+const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_Hiqpq_pT03YIH4oR-cDbBA_htuy8FKd";
+const sbClient = window.supabase
+  ? window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, { auth: { flowType: "pkce" } })
+  : null;
+
+const X_AUTH_POPUP_NAME = "risex-x-auth";
+
+const EVM_ADDRESS_RE = /^0x[0-9a-fA-F]{40}$/;
+
+// 認証済みXアカウント（{ username } または null）
+let xAuth = null;
+let entrySubmitting = false;
+
+function xUsernameFromSession(session) {
+  const m = (session && session.user && session.user.user_metadata) || {};
+  return m.user_name || m.preferred_username || m.name || "";
+}
+
+function setXAuthFromSession(session) {
+  xAuth = session ? { username: xUsernameFromSession(session) } : null;
+  updateXAuthStatus();
+}
+
+if (sbClient) {
+  sbClient.auth.onAuthStateChange((event, session) => {
+    // 認証ポップアップとして開かれている場合: 認証成功を親に伝えて閉じる
+    if (window.opener && window.name === X_AUTH_POPUP_NAME) {
+      if (session) {
+        try {
+          window.opener.postMessage({ type: "risex-x-auth", ok: true }, location.origin);
+        } catch (e) { /* opener が閉じられていた場合は無視 */ }
+        window.close();
+      }
+      return;
+    }
+    setXAuthFromSession(session);
+  });
+}
+
+function openEntryModal() {
+  const modal = document.getElementById("entry-modal");
+  if (modal) modal.classList.add("active");
+}
+
+function closeEntryModal() {
+  const modal = document.getElementById("entry-modal");
+  if (modal) modal.classList.remove("active");
+}
+
+document.addEventListener("keydown", (ev) => {
+  if (ev.key === "Escape") closeEntryModal();
+});
+
+function showEntryError(key) {
+  const el = document.getElementById("entry-error");
+  if (!el) return;
+  if (key) {
+    el.textContent = t(key);
+    el.dataset.errKey = key;
+    el.style.display = "block";
+  } else {
+    el.textContent = "";
+    delete el.dataset.errKey;
+    el.style.display = "none";
+  }
+}
+
+// X認証状態の表示を更新する（言語切替時にも呼ばれる）
+function updateXAuthStatus() {
+  const statusEl = document.getElementById("x-auth-status");
+  const btn = document.getElementById("x-auth-btn");
+  if (!statusEl || !btn) return;
+  if (xAuth) {
+    statusEl.textContent = `${t("entryXVerified")}@${xAuth.username}`;
+    statusEl.classList.add("verified");
+    btn.style.display = "none";
+  } else {
+    statusEl.textContent = "";
+    statusEl.classList.remove("verified");
+    btn.style.display = "";
+  }
+}
+
+async function startXAuth() {
+  if (!sbClient) {
+    showEntryError("entryErrNetwork");
+    return;
+  }
+  showEntryError(null);
+  try {
+    // 認可URLだけ取得し、ページ遷移せずポップアップで開く
+    const { data, error } = await sbClient.auth.signInWithOAuth({
+      provider: "x",  // Supabase の「X / Twitter (OAuth 2.0)」プロバイダ
+      options: {
+        redirectTo: location.origin + location.pathname,
+        skipBrowserRedirect: true,
+      },
+    });
+    if (error) throw error;
+    const w = 500;
+    const h = 700;
+    const left = window.screenX + (window.outerWidth - w) / 2;
+    const top = window.screenY + (window.outerHeight - h) / 2;
+    const popup = window.open(
+      data.url,
+      X_AUTH_POPUP_NAME,
+      `width=${w},height=${h},left=${left},top=${top}`
+    );
+    if (!popup) showEntryError("entryErrPopup");
+  } catch (e) {
+    console.error("x auth failed:", e);
+    showEntryError("entryErrXFailed");
+  }
+}
+
+// 認証ポップアップからの完了通知を受け取り、セッションを反映する
+window.addEventListener("message", async (ev) => {
+  if (ev.origin !== location.origin) return;
+  if (!ev.data || ev.data.type !== "risex-x-auth" || !sbClient) return;
+  const { data } = await sbClient.auth.getSession();
+  setXAuthFromSession(data.session);
+  if (data.session) showEntryError(null);
+  else showEntryError("entryErrXFailed");
+});
+
+async function submitEntry(ev) {
+  ev.preventDefault();
+  if (entrySubmitting) return;
+
+  const name = document.getElementById("entry-name").value.trim();
+  const address = document.getElementById("entry-address").value.trim();
+
+  // 空欄・形式チェック（DB側でも CHECK 制約・RLS で同条件が強制される）
+  if (!name) return showEntryError("entryErrName");
+  if (!EVM_ADDRESS_RE.test(address)) return showEntryError("entryErrAddress");
+  if (!sbClient) return showEntryError("entryErrNetwork");
+
+  const { data: sess } = await sbClient.auth.getSession();
+  if (!sess.session) {
+    setXAuthFromSession(null);
+    return showEntryError("entryErrX");
+  }
+
+  showEntryError(null);
+  entrySubmitting = true;
+  const submitBtn = document.getElementById("entry-submit");
+  submitBtn.disabled = true;
+  submitBtn.textContent = t("entrySubmitting");
+
+  try {
+    const { error } = await sbClient.from("entries").insert({ name, address });
+    if (error) {
+      console.error("entry insert failed:", error);
+      if (error.code === "23514") {
+        // CHECK 制約違反（アドレス形式 or 名前長）
+        showEntryError("entryErrAddress");
+      } else if (error.code === "42501") {
+        // RLS 拒否（セッション切れ等）
+        setXAuthFromSession(null);
+        showEntryError("entryErrX");
+      } else {
+        showEntryError("entryErrNetwork");
+      }
+      return;
+    }
+    document.getElementById("entry-form").style.display = "none";
+    document.getElementById("entry-success").style.display = "block";
+  } catch (e) {
+    console.error("entry submit failed:", e);
+    showEntryError("entryErrNetwork");
+  } finally {
+    entrySubmitting = false;
+    submitBtn.disabled = false;
+    submitBtn.textContent = t("entrySubmit");
   }
 }
 

@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Wagyu Bull Run RISEx Cup</title>
-  <link rel="stylesheet" href="style.css?v=2">
+  <link rel="stylesheet" href="style.css?v=3">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
@@ -36,9 +36,9 @@
           <div class="stat-note" data-i18n="statWagyuNote">¥10,000相当の近江牛</div>
         </div>
       </div>
-      <a class="hero-cta" href="https://www.rise.trade/en/invite/risexjp" target="_blank" rel="noopener">
-        <span class="cta-main" data-i18n="ctaJoin">公式リファラルで登録する →</span>
-        <span class="cta-note" data-i18n="ctaNote">招待コード: risexjp</span>
+      <a class="hero-cta" href="#" onclick="openEntryModal(); return false;">
+        <span class="cta-main" data-i18n="ctaJoin">トレード大会に参加する →</span>
+        <span class="cta-note" data-i18n="ctaNote">エントリーフォームが開きます</span>
       </a>
     </header>
 
@@ -48,7 +48,7 @@
       <ul class="info-list">
         <li data-i18n="entryPeriod">エントリー期間：本日〜9月5日 23:59 JST</li>
         <li data-i18n="compPeriod">大会期間：2026年8月18日〜9月7日 23:59 JST</li>
-        <li data-i18n-html="entryForm">大会エントリーは<a href="https://docs.google.com/forms/d/e/1FAIpQLSddN0vykfKBeSTACEPUVR702k2Ex1Fb_2RC50hLBktuiW6qEw/viewform?usp=sharing&ouid=112041396231013836077" target="_blank" rel="noopener">こちらのフォーム</a>より行ってください。</li>
+        <li data-i18n-html="entryForm">大会エントリーは<a href="#" onclick="openEntryModal(); return false;">こちらのエントリーフォーム</a>より行ってください。</li>
       </ul>
       <p class="info-note" data-i18n="formNote">※賞品発送連絡のためフォーム記入時間違いがないようご注意ください。</p>
 
@@ -175,6 +175,52 @@
     </footer>
   </div>
 
-  <script src="app.js?v=2"></script>
+  <!-- エントリーフォーム（ポップアップ） -->
+  <div id="entry-modal" class="modal-overlay entry-modal-overlay" onclick="closeEntryModal()">
+    <div class="entry-dialog" onclick="event.stopPropagation()" role="dialog" aria-modal="true" aria-labelledby="entry-modal-title">
+      <button type="button" class="entry-close" onclick="closeEntryModal()" aria-label="閉じる">×</button>
+      <h2 id="entry-modal-title" class="section-title" data-i18n="entryModalTitle">大会エントリー</h2>
+
+      <form id="entry-form" onsubmit="submitEntry(event)">
+        <div class="entry-field">
+          <label for="entry-name" data-i18n="entryNameLabel">参加名</label>
+          <input type="text" id="entry-name" maxlength="100" autocomplete="off"
+                 data-i18n-ph="entryNamePh" placeholder="リーダーボードでの表示名">
+        </div>
+
+        <div class="entry-field">
+          <label for="entry-address" data-i18n="entryAddressLabel">RISExアドレス</label>
+          <input type="text" id="entry-address" maxlength="42" autocomplete="off"
+                 spellcheck="false" placeholder="0x...">
+          <p class="entry-note" data-i18n-html="entryAddressNote">
+            専用コード「risexjp」により登録されたアカウントのみ有効です。
+          </p>
+        </div>
+
+        <div class="entry-field">
+          <label data-i18n="entryXLabel">Xアカウント</label>
+          <div class="x-auth-row">
+            <button type="button" id="x-auth-btn" class="x-auth-btn" onclick="startXAuth()">
+              <span data-i18n="entryXAuthBtn">Xで認証する</span>
+            </button>
+            <span id="x-auth-status" class="x-auth-status"></span>
+          </div>
+        </div>
+
+        <p id="entry-error" class="entry-error" style="display:none;"></p>
+
+        <button type="submit" id="entry-submit" class="entry-submit" data-i18n="entrySubmit">エントリーする</button>
+      </form>
+
+      <div id="entry-success" style="display:none;">
+        <p class="entry-success-msg" data-i18n="entrySuccess">✅ エントリーを受け付けました！</p>
+        <p class="entry-note" data-i18n="entrySuccessNote">賞品発送等の連絡は認証済みXアカウントのDMに行います。</p>
+        <button type="button" class="entry-submit" onclick="closeEntryModal()" data-i18n="entryClose">閉じる</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="app.js?v=3"></script>
 </body>
 </html>

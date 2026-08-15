@@ -609,6 +609,160 @@ button:active {
   border-radius: 8px;
 }
 
+/* エントリーフォームモーダル */
+.entry-modal-overlay {
+  cursor: default;
+  padding: 20px;
+}
+
+.entry-dialog {
+  position: relative;
+  width: 100%;
+  max-width: 480px;
+  max-height: 90vh;
+  overflow-y: auto;
+  background: #12161c;
+  border: 1px solid var(--glass-border);
+  border-radius: 16px;
+  padding: 28px 26px;
+  box-shadow: 0 0 40px rgba(3, 222, 130, 0.12);
+}
+
+.entry-close {
+  position: absolute;
+  top: 12px;
+  right: 14px;
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  font-size: 1.4rem;
+  line-height: 1;
+  cursor: pointer;
+  padding: 4px;
+}
+
+.entry-close:hover {
+  color: var(--text-primary);
+}
+
+.entry-field {
+  margin-bottom: 18px;
+}
+
+.entry-field label {
+  display: block;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 6px;
+}
+
+.entry-field input {
+  width: 100%;
+  padding: 10px 12px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  color: var(--text-primary);
+  font-size: 0.95rem;
+  font-family: inherit;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.entry-field input:focus {
+  border-color: var(--accent-color);
+}
+
+.entry-field input::placeholder {
+  color: var(--text-secondary);
+  opacity: 0.6;
+}
+
+.entry-note {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  margin-top: 6px;
+}
+
+.entry-note a {
+  color: var(--accent-color);
+}
+
+.x-auth-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.x-auth-btn {
+  padding: 9px 16px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  color: var(--text-primary);
+  font-size: 0.85rem;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: border-color 0.2s, background 0.2s;
+}
+
+.x-auth-btn:hover {
+  border-color: var(--accent-color);
+  background: rgba(3, 222, 130, 0.08);
+}
+
+.x-auth-status {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+}
+
+.x-auth-status.verified {
+  color: var(--success);
+  font-weight: 600;
+}
+
+.entry-error {
+  color: var(--danger);
+  font-size: 0.8rem;
+  margin: 0 0 12px 0;
+}
+
+.entry-submit {
+  width: 100%;
+  padding: 12px;
+  background: var(--accent-color);
+  border: none;
+  border-radius: 8px;
+  color: #0c0e12;
+  font-size: 0.95rem;
+  font-weight: 800;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background 0.2s, box-shadow 0.2s;
+}
+
+.entry-submit:hover:not(:disabled) {
+  background: var(--accent-dim);
+  box-shadow: 0 0 20px var(--accent-glow);
+}
+
+.entry-submit:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.entry-success-msg {
+  color: var(--success);
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+#entry-success .entry-note {
+  margin-bottom: 16px;
+}
+
 /* Animations */
 @keyframes fadeIn {
   from { opacity: 0; transform: translateY(10px); }
