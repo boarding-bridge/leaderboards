@@ -307,7 +307,10 @@ function closeEntryModal() {
 }
 
 document.addEventListener("keydown", (ev) => {
-  if (ev.key === "Escape") closeEntryModal();
+  if (ev.key !== "Escape") return;
+  closeEntryModal();
+  const posterModal = document.getElementById("poster-modal");
+  if (posterModal) posterModal.classList.remove("active");
 });
 
 function showEntryError(key) {

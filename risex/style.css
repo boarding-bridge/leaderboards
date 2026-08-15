@@ -620,6 +620,25 @@ button:active {
   border-radius: 8px;
 }
 
+/* ヒーロー右上の大会ポスター（クリックで拡大） */
+.hero-poster {
+  position: absolute;
+  top: 28px;
+  right: 28px;
+  width: 240px;
+  max-width: 28%;
+  border-radius: 10px;
+  border: 1px solid var(--glass-border);
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.45);
+  cursor: pointer;
+  transition: opacity 0.2s, transform 0.2s;
+}
+
+.hero-poster:hover {
+  opacity: 0.9;
+  transform: scale(1.02);
+}
+
 /* エントリーフォームモーダル */
 .entry-modal-overlay {
   cursor: default;
@@ -792,6 +811,15 @@ button:active {
 
   .hero {
     padding: 32px 20px;
+  }
+
+  /* モバイルでは右上に余白がないためCTA下に通常配置 */
+  .hero-poster {
+    position: static;
+    display: block;
+    width: 100%;
+    max-width: 420px;
+    margin: 20px auto 0;
   }
 
   .hero h1 {

@@ -40,7 +40,17 @@
         <span class="cta-main" data-i18n="ctaJoin">トレード大会に参加する →</span>
         <span class="cta-note" data-i18n="ctaNote">エントリーフォームが開きます</span>
       </a>
+      <!-- ヒーロー右上のポスターミニ表示（一旦非表示中。戻す場合はコメント解除）
+      <img src="assets/poster.png" alt="大会ポスター" class="hero-poster"
+           onclick="document.getElementById('poster-modal').classList.add('active')">
+      -->
     </header>
+
+    <!-- ポスター拡大表示（ミニ表示とセットでコメント解除する）
+    <div id="poster-modal" class="modal-overlay" onclick="this.classList.remove('active')">
+      <img src="assets/poster.png" alt="大会ポスター（拡大）" class="modal-image">
+    </div>
+    -->
 
     <!-- 大会概要・取引条件 -->
     <div class="dashboard-card animate-fade-in" style="animation-delay: 0.12s;">
