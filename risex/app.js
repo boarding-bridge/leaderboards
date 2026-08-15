@@ -85,6 +85,7 @@ const I18N = {
     rewardNote: "●賞金プールは大会期間中の総取引量（対象アカウントのみ）に応じて4ティアで変動します。<br>●各部門の上位3名にはWagyuギフト（¥10,000相当）が贈られます。",
     refresh: "🔄 更新",
     roiNote: "●CapitalはROI計算の分母となり、計算式は（大会開始時のエクイティ＋期間中の入金）です。<br>●最低取引量（$50,000）を達成すると名前に ✅ がつきます。<br>●最低入金額（200 USDC）を下回っている場合、名前がグレーで表示されます。<br>●両条件を満たした場合、ランキング内に表示されます。",
+    roiNotePre: "●大会開始前のエントリー確認表示です。Depositはこれまでの累計入金額です（200 USDC以上でリワード対象）。<br>●最低入金額（200 USDC）を下回っている場合、名前がグレーで表示されます。<br>●ランキング・ROI等の数値は大会開始後に表示されます。",
     volTotalLabel: "Total Volume: ",
     volNote: "●最低入金額（200 USDC）を下回っている場合、名前がグレーで表示されます。<br>●条件を満たした場合、ランキング内に表示されます。",
     rulesTitle: "大会規約",
@@ -169,6 +170,7 @@ const I18N = {
     rewardNote: "●The prize pool varies across four tiers based on the total trading volume (entered accounts only) during the competition.<br>●The top three in each track will also receive a Wagyu gift (worth ¥10,000).",
     refresh: "🔄 Refresh",
     roiNote: "●Capital is the ROI denominator, calculated as (starting equity + deposits during the competition).<br>●Traders who reach the minimum volume ($50,000) get a ✅ next to their name.<br>●Traders below the minimum deposit (200 USDC) are shown with a gray name.<br>●Traders meeting both conditions are shown in the ranking.",
+    roiNotePre: "●Pre-competition entry check. Deposit shows your total deposits so far (at least 200 USDC is required for rewards).<br>●Traders below the minimum deposit (200 USDC) are shown with a gray name.<br>●Rankings, ROI and other stats will appear once the competition starts.",
     volTotalLabel: "Total Volume: ",
     volNote: "●Traders below the minimum deposit (200 USDC) are shown with a gray name.<br>●Traders meeting the condition are shown in the ranking.",
     rulesTitle: "Terms & Conditions",
@@ -621,6 +623,14 @@ async function fetchData() {
 }
 
 // 取得済みデータから全体を描画する（言語切り替え時にも再利用）
+// 大会開始前か（エントリー確認表示の判定）
+function isPreStart() {
+  const startISO = lastJson && lastJson.meta && lastJson.meta.competitionStartISO;
+  if (!startISO) return false;
+  const startMs = Date.parse(startISO);
+  return Number.isFinite(startMs) && Date.now() < startMs;
+}
+
 function render() {
   const isBlind = applyBlindMode(lastBlind);
 
@@ -634,21 +644,32 @@ function render() {
   const tierIdx = totalVolume != null ? getActiveTierIndex(totalVolume) : REWARD_TIERS.length - 1;
   const tier = REWARD_TIERS[tierIdx];
 
-  if (!isBlind) {
-    // ROIランキング: 対象者（入金200 USDC＋Vol $50k達成）をROI降順で上位に、
-    // 未達者はその下に参考表示。同率は取引量で決定（提案書 Notes）
-    const byRoi = (a, b) => (b.roi - a.roi) || ((b.tradedVolume || 0) - (a.tradedVolume || 0));
-    const eligible = participants.filter(isRoiEligible).sort(byRoi);
-    const rest = participants.filter((p) => !isRoiEligible(p)).sort(byRoi);
-    renderRoiRanking([...eligible, ...rest], eligible.length, tier.prizes.length);
+  // 大会開始前はエントリー確認表示（累計入金のみ。ROI・Capital等は出さない）
+  const preStart = isPreStart();
 
-    // Volumeランキング（Volume降順）
-    // TODO: 同率時は qualifying capital で決定（RISEx仕様 v3）。大小の方向が未確定のため暫定で小さい方を上位とする
-    const byVol = (a, b) =>
-      ((b.tradedVolume || 0) - (a.tradedVolume || 0)) ||
-      ((a.qualifyingCapital || 0) - (b.qualifyingCapital || 0));
-    const volSorted = [...participants].sort(byVol);
-    renderVolRanking(volSorted, totalVolume, tier.prizes.length);
+  if (!isBlind) {
+    if (preStart) {
+      // 入金額の大きい順に表示（順位・入賞ハイライトなし）
+      const byDeposit = (a, b) => (b.totalDeposits || 0) - (a.totalDeposits || 0);
+      const sorted = [...participants].sort(byDeposit);
+      renderRoiRanking(sorted, 0, tier.prizes.length, true);
+      renderVolRanking(sorted, totalVolume, tier.prizes.length, true);
+    } else {
+      // ROIランキング: 対象者（入金200 USDC＋Vol $50k達成）をROI降順で上位に、
+      // 未達者はその下に参考表示。同率は取引量で決定（提案書 Notes）
+      const byRoi = (a, b) => (b.roi - a.roi) || ((b.tradedVolume || 0) - (a.tradedVolume || 0));
+      const eligible = participants.filter(isRoiEligible).sort(byRoi);
+      const rest = participants.filter((p) => !isRoiEligible(p)).sort(byRoi);
+      renderRoiRanking([...eligible, ...rest], eligible.length, tier.prizes.length, false);
+
+      // Volumeランキング（Volume降順）
+      // TODO: 同率時は qualifying capital で決定（RISEx仕様 v3）。大小の方向が未確定のため暫定で小さい方を上位とする
+      const byVol = (a, b) =>
+        ((b.tradedVolume || 0) - (a.tradedVolume || 0)) ||
+        ((a.qualifyingCapital || 0) - (b.qualifyingCapital || 0));
+      const volSorted = [...participants].sort(byVol);
+      renderVolRanking(volSorted, totalVolume, tier.prizes.length, false);
+    }
   }
 
   // リワードテーブル
@@ -690,7 +711,7 @@ function buildPageTabs(container, totalCount, activePage, onSelect) {
   };
 }
 
-function renderRoiPage(body, data, page, eligibleCount, prizeCount) {
+function renderRoiPage(body, data, page, eligibleCount, prizeCount, preStart) {
   body.innerHTML = "";
   const start = page * INITIAL_DISPLAY_COUNT;
   const slice = data.slice(start, start + INITIAL_DISPLAY_COUNT);
@@ -700,6 +721,21 @@ function renderRoiPage(body, data, page, eligibleCount, prizeCount) {
     const tr = document.createElement("tr");
     tr.className = "animate-fade-in";
     tr.style.animationDelay = `${i * 0.03}s`;
+
+    const warnClass = minDepositMet(item) ? "" : " baseline-warn";
+
+    // 開始前はエントリー確認表示: 累計入金のみ（順位・入賞ハイライトなし）
+    if (preStart) {
+      const deposit = item.totalDeposits || 0;
+      tr.innerHTML = `
+        <td>-</td>
+        <td class="${warnClass}">${traderCell(item)}</td>
+        <td class="${warnClass}">$${deposit.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
+      `;
+      body.appendChild(tr);
+      return;
+    }
+
     // 入賞圏ハイライトはランキング対象者のみ
     if (index < prizeCount && index < eligibleCount) tr.classList.add("rank-prize");
 
@@ -720,18 +756,32 @@ function renderRoiPage(body, data, page, eligibleCount, prizeCount) {
   });
 }
 
-function renderRoiRanking(data, eligibleCount, prizeCount) {
+function renderRoiRanking(data, eligibleCount, prizeCount, preStart) {
   const body = document.getElementById("roi-ranking-body");
   const card = body.closest(".dashboard-card");
 
+  // 開始前はヘッダを Rank / Trader / Deposit の3列に差し替える
+  const theadRow = card.querySelector("thead tr");
+  theadRow.innerHTML = preStart
+    ? "<th>Rank</th><th>Trader</th><th>Deposit</th>"
+    : "<th>Rank</th><th>Trader</th><th>Capital</th><th>ROI</th><th>PnL</th>";
+
+  // 注記も開始前用に切り替える（言語切替時は render() 経由で再設定される）
+  const noteEl = card.querySelector("[data-i18n-html]");
+  if (noteEl) {
+    const key = preStart ? "roiNotePre" : "roiNote";
+    noteEl.setAttribute("data-i18n-html", key);
+    noteEl.innerHTML = t(key);
+  }
+
   const showPage = (page) => {
-    renderRoiPage(body, data, page, eligibleCount, prizeCount);
+    renderRoiPage(body, data, page, eligibleCount, prizeCount, preStart);
     buildPageTabs(card, data.length, page, showPage);
   };
   showPage(0);
 }
 
-function renderVolPage(body, data, page, prizeCount) {
+function renderVolPage(body, data, page, prizeCount, preStart) {
   body.innerHTML = "";
   const start = page * INITIAL_DISPLAY_COUNT;
   const slice = data.slice(start, start + INITIAL_DISPLAY_COUNT);
@@ -746,13 +796,14 @@ function renderVolPage(body, data, page, prizeCount) {
 
     const met = minDepositMet(item);
     if (met) qualifiedRank++;
-    if (met && qualifiedRank <= prizeCount) tr.classList.add("rank-prize");
+    // 開始前は順位・入賞ハイライトを出さない（エントリー確認表示）
+    if (!preStart && met && qualifiedRank <= prizeCount) tr.classList.add("rank-prize");
 
     const vol = item.tradedVolume || 0;
     const warnClass = met ? "" : " baseline-warn";
 
     tr.innerHTML = `
-      <td>${met ? rankCell(qualifiedRank - 1) : "-"}</td>
+      <td>${!preStart && met ? rankCell(qualifiedRank - 1) : "-"}</td>
       <td class="${warnClass}">${traderCell(item)}</td>
       <td>$${vol.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
     `;
@@ -760,7 +811,7 @@ function renderVolPage(body, data, page, prizeCount) {
   });
 }
 
-function renderVolRanking(data, totalVolume, prizeCount) {
+function renderVolRanking(data, totalVolume, prizeCount, preStart) {
   const totalEl = document.getElementById("vol-total");
   if (totalEl && totalVolume != null) {
     totalEl.textContent = `$${totalVolume.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
@@ -770,7 +821,7 @@ function renderVolRanking(data, totalVolume, prizeCount) {
   const card = body.closest(".dashboard-card");
 
   const showPage = (page) => {
-    renderVolPage(body, data, page, prizeCount);
+    renderVolPage(body, data, page, prizeCount, preStart);
     buildPageTabs(card, data.length, page, showPage);
   };
   showPage(0);
