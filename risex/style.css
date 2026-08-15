@@ -494,6 +494,10 @@ button:active {
 }
 
 .tier-tab {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
   background: rgba(255, 255, 255, 0.05);
   border: 1px solid var(--glass-border);
   color: var(--text-secondary);
@@ -504,6 +508,13 @@ button:active {
   font-family: var(--font-mono);
   cursor: pointer;
   transition: all 0.2s;
+}
+
+/* タブ内のリワードプール総額（補助表示） */
+.tier-tab-pool {
+  font-size: 0.7rem;
+  font-weight: 600;
+  opacity: 0.8;
 }
 
 .tier-tab:hover {

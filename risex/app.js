@@ -37,8 +37,9 @@ const INITIAL_DISPLAY_COUNT = 10;
 const I18N = {
   ja: {
     heroSubtitle: "ROI・Volumeの2部門で賞金を獲得！",
-    statPoolLabel: "賞金プール（現在ティア）",
-    statPoolNote: "{n} USDC × 2部門・総取引量で変動",
+    statPoolLabel: "リワード総額（最大）",
+    statPoolNote1: "Wagyuギフト+Giveaway等総額",
+    statPoolNote2: "現在ティア: {n} USDC",
     statPeriodLabel: "大会期間",
     statPeriodValue: "8/18 - 9/7",
     statPeriodNote: "2026年・9月7日 23:59 JSTまで",
@@ -118,8 +119,9 @@ const I18N = {
   },
   en: {
     heroSubtitle: "Win prizes across the ROI and Volume tracks!",
-    statPoolLabel: "Prize Pool (current tier)",
-    statPoolNote: "{n} USDC × 2 tracks, varies with total volume",
+    statPoolLabel: "Total Rewards (max)",
+    statPoolNote1: "Total incl. Wagyu gifts + giveaways",
+    statPoolNote2: "Current tier: {n} USDC",
     statPeriodLabel: "Period",
     statPeriodValue: "Aug 18 - Sep 7",
     statPeriodNote: "2026, until Sep 7 23:59 JST",
@@ -446,6 +448,11 @@ function rankCell(index) {
   return medal ? `${medal} ${index + 1}` : `${index + 1}`;
 }
 
+// ティアのリワードプール総額（USDC・2部門合計）
+function tierPoolTotal(tier) {
+  return tier.prizes.reduce((sum, p) => sum + p, 0) * 2;
+}
+
 // 最低入金200 USDCの達成判定。backendのフラグを優先し、無ければ期間中入金合計で代替
 function minDepositMet(item) {
   if (typeof item.minDepositMet === "boolean") return item.minDepositMet;
@@ -459,15 +466,14 @@ function isRoiEligible(item) {
 
 // ---- リワードテーブル -------------------------------------------------
 
-// ヒーローの賞金プールカードを現在ティアに合わせて更新する
+// ヒーローの賞金プールカード: 主表示は最大額($10,000・HTML静的)、
+// 補助表示(note)に現在ティアのプール総額を出す
 function updateHeroPool(totalVolume) {
-  const poolEl = document.getElementById("hero-pool");
-  if (!poolEl) return;
-  const idx = totalVolume != null ? getActiveTierIndex(totalVolume) : REWARD_TIERS.length - 1;
-  const perTrack = REWARD_TIERS[idx].prizes.reduce((sum, p) => sum + p, 0);
-  poolEl.textContent = (perTrack * 2).toLocaleString();
   const noteEl = document.getElementById("hero-pool-note");
-  if (noteEl) noteEl.textContent = t("statPoolNote").replace("{n}", perTrack.toLocaleString());
+  if (!noteEl) return;
+  const idx = totalVolume != null ? getActiveTierIndex(totalVolume) : REWARD_TIERS.length - 1;
+  const total = tierPoolTotal(REWARD_TIERS[idx]);
+  noteEl.innerHTML = `${t("statPoolNote1")}<br>${t("statPoolNote2").replace("{n}", total.toLocaleString())}`;
 }
 
 function renderRewardTables(totalVolume) {
@@ -484,7 +490,10 @@ function renderRewardTables(totalVolume) {
   const tabsEl = document.getElementById("tier-tabs");
   const tierColors = ["tier-tab--green", "tier-tab--teal", "tier-tab--yellow", "tier-tab--purple"];
   tabsEl.innerHTML = REWARD_TIERS.map((tier, i) =>
-    `<button class="tier-tab ${tierColors[i]}${i === activeIdx ? " tier-tab--active tier-tab--selected" : ""}" data-tier="${i}">${tier.label}${i === activeIdx ? t("currentTier") : ""}</button>`
+    `<button class="tier-tab ${tierColors[i]}${i === activeIdx ? " tier-tab--active tier-tab--selected" : ""}" data-tier="${i}">` +
+    `<span class="tier-tab-label">${tier.label}${i === activeIdx ? t("currentTier") : ""}</span>` +
+    `<span class="tier-tab-pool">${tierPoolTotal(tier).toLocaleString()} USDC</span>` +
+    `</button>`
   ).join("");
 
   // テーブル
