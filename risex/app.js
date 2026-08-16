@@ -72,6 +72,8 @@ const I18N = {
     entryErrX: "Xアカウントの認証を完了してください。",
     entryErrXFailed: "X認証に失敗しました。再度お試しください。",
     entryErrPopup: "ポップアップがブロックされました。ブラウザの設定をご確認ください。",
+    entryErrDupUser: "このXアカウントでは既にエントリー済みです。",
+    entryErrDupAddress: "このRISExアドレスは既に別のエントリーで使用されています。",
     entryErrNetwork: "送信に失敗しました。時間をおいて再度お試しください。",
     entryErrApiUnset: "エントリー受付は現在準備中です。しばらくお待ちください。",
     tradingTitle: "取引条件",
@@ -157,6 +159,8 @@ const I18N = {
     entryErrX: "Please verify your X account first.",
     entryErrXFailed: "X verification failed. Please try again.",
     entryErrPopup: "The popup was blocked. Please check your browser settings.",
+    entryErrDupUser: "This X account has already entered the competition.",
+    entryErrDupAddress: "This RISEx address is already used by another entry.",
     entryErrNetwork: "Failed to submit. Please try again later.",
     entryErrApiUnset: "Entry submission is being prepared. Please check back soon.",
     tradingTitle: "Trading Requirements",
@@ -419,7 +423,12 @@ async function submitEntry(ev) {
     const { error } = await sbClient.from("entries").insert({ name, address });
     if (error) {
       console.error("entry insert failed:", error);
-      if (error.code === "23514") {
+      if (error.code === "23505") {
+        // UNIQUE 制約違反（重複エントリー）。制約名でXアカウント重複か
+        // アドレス重複かを判別する
+        const msg = `${error.message || ""} ${error.details || ""}`;
+        showEntryError(/address/i.test(msg) ? "entryErrDupAddress" : "entryErrDupUser");
+      } else if (error.code === "23514") {
         // CHECK 制約違反（アドレス形式 or 名前長）
         showEntryError("entryErrAddress");
       } else if (error.code === "42501") {
