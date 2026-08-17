@@ -1,9 +1,9 @@
 {
   "meta": {
-    "fetchedAtUTC": "2026-08-17T15:00:38.591285Z",
+    "fetchedAtUTC": "2026-08-17T15:10:47.930835Z",
     "source": "official",
     "competitionState": "live",
-    "officialUpdatedAt": "0",
+    "officialUpdatedAt": "1786979279",
     "competitionStartISO": "2026-08-18T00:00:00+09:00",
     "competitionEndISO": "2026-09-08T00:00:00+09:00",
     "totalCount": 1,
@@ -32,8 +32,8 @@
       },
       "source": "official",
       "officialRegistered": true,
-      "roiRank": null,
-      "volumeRank": null,
+      "roiRank": 1,
+      "volumeRank": 1,
       "tradedVolume": 0.0,
       "pnl": 0.0,
       "roi": 0.0,
