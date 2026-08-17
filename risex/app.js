@@ -474,12 +474,29 @@ function tierPoolTotal(tier) {
 // 最低入金200 USDCの達成判定。backendのフラグを優先し、無ければ期間中入金合計で代替
 function minDepositMet(item) {
   if (typeof item.minDepositMet === "boolean") return item.minDepositMet;
-  return (item.deposits || 0) >= MIN_DEPOSIT_USDC;
+  const deposits = item.deposits ?? (item.selfCheck && item.selfCheck.deposits) ?? 0;
+  return deposits >= MIN_DEPOSIT_USDC;
 }
 
-// ROI部門のランキング対象（入金ゲート＋最低取引量）
+// ROI部門のランキング対象。公式APIの判定（roiQualified）を優先し、
+// 無ければ入金ゲート＋最低取引量で自前判定
 function isRoiEligible(item) {
+  if (typeof item.roiQualified === "boolean") return item.roiQualified;
   return minDepositMet(item) && (item.tradedVolume || 0) >= ROI_VOLUME_THRESHOLD;
+}
+
+// Volume部門のランキング対象（入金ゲート）。公式APIの判定を優先
+function isVolEligible(item) {
+  if (typeof item.volumeQualified === "boolean") return item.volumeQualified;
+  return minDepositMet(item);
+}
+
+// 公式rank同士の比較（無い側は最後尾へ。両方無ければ0で次の条件へ委ねる）
+function compareOfficialRank(a, b) {
+  const ra = Number.isFinite(a) ? a : Infinity;
+  const rb = Number.isFinite(b) ? b : Infinity;
+  if (ra === rb) return 0;
+  return ra - rb;
 }
 
 // ---- リワードテーブル -------------------------------------------------
@@ -664,16 +681,21 @@ function render() {
       renderRoiRanking(sorted, 0, tier.prizes.length, true);
       renderVolRanking(sorted, totalVolume, tier.prizes.length, true);
     } else {
-      // ROIランキング: 対象者（入金200 USDC＋Vol $50k達成）をROI降順で上位に、
+      // ROIランキング: 公式rank（roiRank）があればそれを最優先し、
+      // 無ければ対象者（入金200 USDC＋Vol $50k達成）をROI降順で並べる。
       // 未達者はその下に参考表示。同率は取引量で決定（提案書 Notes）
-      const byRoi = (a, b) => (b.roi - a.roi) || ((b.tradedVolume || 0) - (a.tradedVolume || 0));
+      const byRoi = (a, b) =>
+        compareOfficialRank(a.roiRank, b.roiRank) ||
+        (b.roi - a.roi) ||
+        ((b.tradedVolume || 0) - (a.tradedVolume || 0));
       const eligible = participants.filter(isRoiEligible).sort(byRoi);
       const rest = participants.filter((p) => !isRoiEligible(p)).sort(byRoi);
       renderRoiRanking([...eligible, ...rest], eligible.length, tier.prizes.length, false);
 
-      // Volumeランキング（Volume降順）
+      // Volumeランキング: 公式rank（volumeRank）優先、無ければVolume降順
       // TODO: 同率時は qualifying capital で決定（RISEx仕様 v3）。大小の方向が未確定のため暫定で小さい方を上位とする
       const byVol = (a, b) =>
+        compareOfficialRank(a.volumeRank, b.volumeRank) ||
         ((b.tradedVolume || 0) - (a.tradedVolume || 0)) ||
         ((a.qualifyingCapital || 0) - (b.qualifyingCapital || 0));
       const volSorted = [...participants].sort(byVol);
@@ -795,15 +817,16 @@ function renderVolPage(body, data, page, prizeCount, preStart) {
   const start = page * INITIAL_DISPLAY_COUNT;
   const slice = data.slice(start, start + INITIAL_DISPLAY_COUNT);
 
-  // 順位は最低入金達成者のみで採番し、未達者は "-" 表示（リワード対象外）
-  let qualifiedRank = data.slice(0, start).filter(minDepositMet).length;
+  // 順位はランキング対象者（公式判定 or 最低入金達成）のみで採番し、
+  // 対象外は "-" 表示（リワード対象外）
+  let qualifiedRank = data.slice(0, start).filter(isVolEligible).length;
 
   slice.forEach((item, i) => {
     const tr = document.createElement("tr");
     tr.className = "animate-fade-in";
     tr.style.animationDelay = `${i * 0.03}s`;
 
-    const met = minDepositMet(item);
+    const met = isVolEligible(item);
     if (met) qualifiedRank++;
     // 開始前は順位・入賞ハイライトを出さない（エントリー確認表示）
     if (!preStart && met && qualifiedRank <= prizeCount) tr.classList.add("rank-prize");
