@@ -196,8 +196,11 @@
       <form id="entry-form" onsubmit="submitEntry(event)">
         <div class="entry-field">
           <label for="entry-name" data-i18n="entryNameLabel">参加名</label>
-          <input type="text" id="entry-name" maxlength="100" autocomplete="off"
-                 data-i18n-ph="entryNamePh" placeholder="リーダーボードでの表示名">
+          <input type="text" id="entry-name" maxlength="20" autocomplete="off"
+                 spellcheck="false" data-i18n-ph="entryNamePh" placeholder="リーダーボードでの表示名">
+          <p class="entry-note" data-i18n="entryNameNote">
+            使用できるのは半角英数字とアンダースコア（_）のみ、3〜20文字です。
+          </p>
         </div>
 
         <div class="entry-field">
@@ -233,6 +236,6 @@
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="app.js?v=7"></script>
+  <script src="app.js?v=8"></script>
 </body>
 </html>

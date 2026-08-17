@@ -57,6 +57,7 @@ const I18N = {
     entryModalTitle: "大会エントリー",
     entryNameLabel: "参加名",
     entryNamePh: "リーダーボードでの表示名",
+    entryNameNote: "使用できるのは半角英数字とアンダースコア（_）のみ、3〜20文字です。",
     entryAddressLabel: "RISExアドレス",
     entryAddressNote: 'リファラルの種類は問いません。他のリファラルで作成したアカウントでもエントリー可能です。未登録の場合は<a href="https://www.rise.trade/en/invite/risexjp" target="_blank" rel="noopener">公式リファラル（招待コード: risexjp）</a>からの登録で15%ポイントブーストが適用されます。',
     entryXLabel: "Xアカウント",
@@ -68,12 +69,14 @@ const I18N = {
     entrySuccessNote: "賞品発送等の連絡は認証済みXアカウントのDMに行います。",
     entryClose: "閉じる",
     entryErrName: "参加名を入力してください。",
+    entryErrNameFormat: "参加名は半角英数字とアンダースコア（_）3〜20文字で入力してください。",
     entryErrAddress: "RISExアドレスは 0x から始まる42文字のEVMアドレスを入力してください。",
     entryErrX: "Xアカウントの認証を完了してください。",
     entryErrXFailed: "X認証に失敗しました。再度お試しください。",
     entryErrPopup: "ポップアップがブロックされました。ブラウザの設定をご確認ください。",
     entryErrDupUser: "このXアカウントでは既にエントリー済みです。",
     entryErrDupAddress: "このRISExアドレスは既に別のエントリーで使用されています。",
+    entryErrDupName: "この参加名は既に使用されています。別の名前を入力してください。",
     entryErrNetwork: "送信に失敗しました。時間をおいて再度お試しください。",
     entryErrApiUnset: "エントリー受付は現在準備中です。しばらくお待ちください。",
     tradingTitle: "取引条件",
@@ -144,6 +147,7 @@ const I18N = {
     entryModalTitle: "Competition Entry",
     entryNameLabel: "Display Name",
     entryNamePh: "Name shown on the leaderboard",
+    entryNameNote: "3-20 characters; letters, digits, and underscores (_) only.",
     entryAddressLabel: "RISEx Address",
     entryAddressNote: 'Any referral is accepted — accounts created with other referrals can also enter. If you have not registered yet, signing up via the <a href="https://www.rise.trade/en/invite/risexjp" target="_blank" rel="noopener">official referral link (code: risexjp)</a> grants a 15% point boost.',
     entryXLabel: "X Account",
@@ -155,12 +159,14 @@ const I18N = {
     entrySuccessNote: "Winners will be contacted via DM on the verified X account.",
     entryClose: "Close",
     entryErrName: "Please enter your display name.",
+    entryErrNameFormat: "Display name must be 3-20 characters using only letters, digits, and underscores (_).",
     entryErrAddress: "Please enter a valid 42-character EVM address starting with 0x.",
     entryErrX: "Please verify your X account first.",
     entryErrXFailed: "X verification failed. Please try again.",
     entryErrPopup: "The popup was blocked. Please check your browser settings.",
     entryErrDupUser: "This X account has already entered the competition.",
     entryErrDupAddress: "This RISEx address is already used by another entry.",
+    entryErrDupName: "This display name is already taken. Please choose another.",
     entryErrNetwork: "Failed to submit. Please try again later.",
     entryErrApiUnset: "Entry submission is being prepared. Please check back soon.",
     tradingTitle: "Trading Requirements",
@@ -276,6 +282,11 @@ const X_AUTH_POPUP_NAME = "risex-x-auth";
 
 const EVM_ADDRESS_RE = /^0x[0-9a-fA-F]{40}$/;
 
+// 参加名は公式大会APIのユーザー名仕様に合わせる
+// （テストネットで確認: letters, digits, underscores / 3-20文字）
+const ENTRY_NAME_RE = /^[A-Za-z0-9_]{3,20}$/;
+const ENTRY_NAME_STRIP_RE = /[^A-Za-z0-9_]/g;
+
 // 認証済みXアカウント（{ username } または null）
 let xAuth = null;
 let entrySubmitting = false;
@@ -305,6 +316,21 @@ if (sbClient) {
     setXAuthFromSession(session);
   });
 }
+
+// 参加名入力欄: 使用不可の文字を入力時点で取り除く。
+// IME入力中の書き換えは変換を壊すため、確定後にのみ適用する
+(function setupEntryNameFilter() {
+  const input = document.getElementById("entry-name");
+  if (!input) return;
+  const filter = () => {
+    const filtered = input.value.replace(ENTRY_NAME_STRIP_RE, "");
+    if (input.value !== filtered) input.value = filtered;
+  };
+  input.addEventListener("input", (ev) => {
+    if (!ev.isComposing) filter();
+  });
+  input.addEventListener("compositionend", filter);
+})();
 
 function openEntryModal() {
   const modal = document.getElementById("entry-modal");
@@ -404,6 +430,7 @@ async function submitEntry(ev) {
 
   // 空欄・形式チェック（DB側でも CHECK 制約・RLS で同条件が強制される）
   if (!name) return showEntryError("entryErrName");
+  if (!ENTRY_NAME_RE.test(name)) return showEntryError("entryErrNameFormat");
   if (!EVM_ADDRESS_RE.test(address)) return showEntryError("entryErrAddress");
   if (!sbClient) return showEntryError("entryErrNetwork");
 
@@ -424,10 +451,12 @@ async function submitEntry(ev) {
     if (error) {
       console.error("entry insert failed:", error);
       if (error.code === "23505") {
-        // UNIQUE 制約違反（重複エントリー）。制約名でXアカウント重複か
-        // アドレス重複かを判別する
+        // UNIQUE 制約違反（重複エントリー）。制約名でアドレス重複・
+        // 参加名重複・Xアカウント重複を判別する
         const msg = `${error.message || ""} ${error.details || ""}`;
-        showEntryError(/address/i.test(msg) ? "entryErrDupAddress" : "entryErrDupUser");
+        if (/address/i.test(msg)) showEntryError("entryErrDupAddress");
+        else if (/name/i.test(msg)) showEntryError("entryErrDupName");
+        else showEntryError("entryErrDupUser");
       } else if (error.code === "23514") {
         // CHECK 制約違反（アドレス形式 or 名前長）
         showEntryError("entryErrAddress");
