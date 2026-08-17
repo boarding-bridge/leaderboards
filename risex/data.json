@@ -1,8 +1,8 @@
 {
   "meta": {
-    "fetchedAtUTC": "2026-08-17T11:08:31.491971Z",
+    "fetchedAtUTC": "2026-08-17T15:00:38.591285Z",
     "source": "official",
-    "competitionState": "pre",
+    "competitionState": "live",
     "officialUpdatedAt": "0",
     "competitionStartISO": "2026-08-18T00:00:00+09:00",
     "competitionEndISO": "2026-09-08T00:00:00+09:00",
@@ -15,7 +15,7 @@
       "displayName": "mol",
       "xAccount": "bb_mol_crypto",
       "qualifyingCapital": 0.0,
-      "minDepositMet": true,
+      "minDepositMet": false,
       "totalDeposits": 205.0,
       "entryEquity": 0.0,
       "selfCheck": {
@@ -27,7 +27,7 @@
         "qualifyingCapital": 0.0,
         "pnl": 0.0,
         "roi": 0.0,
-        "minDepositMet": true,
+        "minDepositMet": false,
         "totalDeposits": 205.0
       },
       "source": "official",
