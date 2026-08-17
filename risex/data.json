@@ -1,6 +1,9 @@
 {
   "meta": {
-    "fetchedAtUTC": "2026-08-17T09:41:12.539926Z",
+    "fetchedAtUTC": "2026-08-17T11:08:31.491971Z",
+    "source": "official",
+    "competitionState": "pre",
+    "officialUpdatedAt": "0",
     "competitionStartISO": "2026-08-18T00:00:00+09:00",
     "competitionEndISO": "2026-09-08T00:00:00+09:00",
     "totalCount": 1,
@@ -11,17 +14,35 @@
       "address": "0x6FF762D05061Bf75b8Fa46f61D02f86121EcE33E",
       "displayName": "mol",
       "xAccount": "bb_mol_crypto",
-      "tradedVolume": 0.0,
-      "startingEquity": 0.0,
-      "deposits": 0.0,
-      "withdrawals": 0.0,
-      "endEquity": 0.0,
       "qualifyingCapital": 0.0,
+      "minDepositMet": true,
+      "totalDeposits": 205.0,
+      "entryEquity": 0.0,
+      "selfCheck": {
+        "tradedVolume": 0.0,
+        "startingEquity": 0.0,
+        "deposits": 0.0,
+        "withdrawals": 0.0,
+        "endEquity": 0.0,
+        "qualifyingCapital": 0.0,
+        "pnl": 0.0,
+        "roi": 0.0,
+        "minDepositMet": true,
+        "totalDeposits": 205.0
+      },
+      "source": "official",
+      "officialRegistered": true,
+      "roiRank": null,
+      "volumeRank": null,
+      "tradedVolume": 0.0,
       "pnl": 0.0,
       "roi": 0.0,
-      "minDepositMet": true,
-      "entryEquity": 0.0,
-      "totalDeposits": 205.0
+      "winRate": 0.0,
+      "trades": 0,
+      "roiQualified": false,
+      "volumeQualified": false,
+      "totalRewardUsd": 0.0,
+      "officialDepositsUsd": 0.0
     }
   ]
 }
