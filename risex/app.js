@@ -124,6 +124,7 @@ const I18N = {
     roiTrack: "ROI 部門",
     volTrack: "Trading Vol. 部門",
     qualifyTitle: "Vol. $50,000+ 達成",
+    capitalPreparing: "準備中",
   },
   en: {
     heroSubtitle: "Win prizes across the ROI and Volume tracks!",
@@ -214,6 +215,7 @@ const I18N = {
     roiTrack: "ROI Track",
     volTrack: "Volume Track",
     qualifyTitle: "Vol. $50,000+ reached",
+    capitalPreparing: "Preparing",
   },
 };
 
@@ -726,7 +728,7 @@ function render() {
       const byVol = (a, b) =>
         compareOfficialRank(a.volumeRank, b.volumeRank) ||
         ((b.tradedVolume || 0) - (a.tradedVolume || 0)) ||
-        ((a.qualifyingCapital || 0) - (b.qualifyingCapital || 0));
+        (Math.max(a.qualifyingCapital || 0, 0) - Math.max(b.qualifyingCapital || 0, 0));
       const volSorted = [...participants].sort(byVol);
       renderVolRanking(volSorted, totalVolume, tier.prizes.length, false);
     }
@@ -771,7 +773,12 @@ function buildPageTabs(container, totalCount, activePage, onSelect) {
   };
 }
 
-function renderRoiPage(body, data, page, eligibleCount, prizeCount, preStart) {
+// qualifyingCapital が -1 のときは公式APIが値を未提供（準備中）
+function isCapitalPending(item) {
+  return (item.qualifyingCapital ?? 0) < 0;
+}
+
+function renderRoiPage(body, data, page, eligibleCount, prizeCount, preStart, hideCapital) {
   body.innerHTML = "";
   const start = page * INITIAL_DISPLAY_COUNT;
   const slice = data.slice(start, start + INITIAL_DISPLAY_COUNT);
@@ -803,12 +810,18 @@ function renderRoiPage(body, data, page, eligibleCount, prizeCount, preStart) {
     const pnl = item.pnl || 0;
     const pnlClass = pnl >= 0 ? "roi-positive" : "roi-negative";
 
-    const capital = item.qualifyingCapital || 0;
+    // 公式APIが qualifying_capital 未提供（-1）の間は「準備中」表示。
+    // 全員未提供の場合は hideCapital で列ごと非表示になる
+    const capitalCell = hideCapital
+      ? ""
+      : isCapitalPending(item)
+        ? `<td class="${warnClass}">${t("capitalPreparing")}</td>`
+        : `<td class="${warnClass}">$${(item.qualifyingCapital || 0).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>`;
 
     tr.innerHTML = `
       <td>${index < eligibleCount ? rankCell(index) : "-"}</td>
       <td class="${warnClass}">${traderCell(item)}</td>
-      <td class="${warnClass}">$${capital.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
+      ${capitalCell}
       <td class="${roiClass}">${(item.roi || 0).toFixed(2)}%</td>
       <td class="${pnlClass}">$${pnl.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
     `;
@@ -820,11 +833,16 @@ function renderRoiRanking(data, eligibleCount, prizeCount, preStart) {
   const body = document.getElementById("roi-ranking-body");
   const card = body.closest(".dashboard-card");
 
+  // 全員の qualifying_capital が未提供（-1）の間は Capital 列ごと非表示にする
+  const hideCapital = !preStart && data.length > 0 && data.every(isCapitalPending);
+
   // 開始前はヘッダを Rank / Trader / Deposit の3列に差し替える
   const theadRow = card.querySelector("thead tr");
   theadRow.innerHTML = preStart
     ? "<th>Rank</th><th>Trader</th><th>Deposit</th>"
-    : "<th>Rank</th><th>Trader</th><th>Capital</th><th>ROI</th><th>PnL</th>";
+    : hideCapital
+      ? "<th>Rank</th><th>Trader</th><th>ROI</th><th>PnL</th>"
+      : "<th>Rank</th><th>Trader</th><th>Capital</th><th>ROI</th><th>PnL</th>";
 
   // 注記も開始前用に切り替える（言語切替時は render() 経由で再設定される）
   const noteEl = card.querySelector("[data-i18n-html]");
@@ -835,7 +853,7 @@ function renderRoiRanking(data, eligibleCount, prizeCount, preStart) {
   }
 
   const showPage = (page) => {
-    renderRoiPage(body, data, page, eligibleCount, prizeCount, preStart);
+    renderRoiPage(body, data, page, eligibleCount, prizeCount, preStart, hideCapital);
     buildPageTabs(card, data.length, page, showPage);
   };
   showPage(0);
