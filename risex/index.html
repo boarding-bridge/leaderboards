@@ -19,6 +19,7 @@
       <span class="hero-badge">RISEx Trading Competition</span>
       <h1>Wagyu Bull Run<br><span class="hero-accent">RISEx Cup</span></h1>
       <p class="subtitle" data-i18n="heroSubtitle">ROI・Volumeの2部門で賞金を獲得！</p>
+      <div class="hero-entry">
       <div class="hero-stats">
         <div class="stat-card">
           <div class="stat-label" data-i18n="statPoolLabel">リワード総額（最大）</div>
@@ -40,6 +41,7 @@
         <span class="cta-main" data-i18n="ctaJoin">トレード大会に参加する →</span>
         <span class="cta-note" data-i18n="ctaNote">エントリーフォームが開きます</span>
       </a>
+      </div>
       <!-- ヒーロー右上のポスターミニ表示（一旦非表示中。戻す場合はコメント解除）
       <img src="assets/poster.png" alt="大会ポスター" class="hero-poster"
            onclick="document.getElementById('poster-modal').classList.add('active')">
@@ -157,6 +159,12 @@
         </p>
       </div>
     </div>
+
+    <!-- エントリーCTA（大会規約の上） -->
+    <a class="hero-cta section-cta" href="#" onclick="openEntryModal(); return false;">
+      <span class="cta-main" data-i18n="ctaJoin">トレード大会に参加する →</span>
+      <span class="cta-note" data-i18n="ctaNote">エントリーフォームが開きます</span>
+    </a>
 
     <!-- 大会規約 -->
     <div class="dashboard-card rules-section animate-fade-in" style="animation-delay: 0.4s;">
