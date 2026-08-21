@@ -348,8 +348,21 @@ button:active {
 
 .roi-positive { color: var(--success); }
 .roi-negative { color: var(--danger); }
-/* 最低入金額（200 USDC）未達の表示。ROI/PnLの赤字と混同しないようグレーにする */
+/* 最低入金額（200 USDC）未達のTrader/Capitalセル。ROI/PnLの赤字と混同しないようグレーにする */
 .baseline-warn { color: var(--text-secondary); }
+
+/* 最低入金額（200 USDC）未達の行。背景と枠色（黄色）でも表現する */
+.leaderboard-table tr.deposit-warn {
+  background: rgba(250, 197, 21, 0.05);
+}
+
+.leaderboard-table tr.deposit-warn:hover {
+  background: rgba(250, 197, 21, 0.1);
+}
+
+.leaderboard-table tr.deposit-warn td {
+  border-color: rgba(250, 197, 21, 0.4);
+}
 
 .blind-message {
   text-align: center;

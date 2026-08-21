@@ -101,7 +101,7 @@ const I18N = {
     rewardNote: "●賞金プールは大会期間中の総取引量（対象アカウントのみ）に応じて4ティアで変動します。<br>●各部門の上位3名にはWagyuギフト（¥10,000相当）が贈られます。",
     refresh: "🔄 更新",
     sortLabel: "ランキング表示:",
-    rankingNote: "●CapitalはROI計算の分母となり、計算式は（大会開始時のエクイティ＋期間中の入金）です。<br>●最低取引量（$50,000）を達成すると名前に ✅ がつきます。<br>●入金条件（大会期間中に 200 USDC以上）を満たしていない場合、名前がグレーで表示されます。<br>●ROIランキングは入金条件と最低取引量、Volumeランキングは入金条件を満たすと順位が表示されます。<br>●入賞圏の順位には現在ティアのリワード額を表示しています。🥩は上位3名へのWagyuギフト（¥10,000相当の和牛チケット）です。",
+    rankingNote: "●CapitalはROI計算の分母となり、計算式は（大会開始時のエクイティ＋期間中の入金）です。<br>●最低取引量（$50,000）を達成すると名前に ✅ がつきます。<br>●入金条件（大会期間中に 200 USDC以上）を満たしていない場合、行が黄色の枠・背景、名前がグレーで表示されます。<br>●ROIランキングは入金条件と最低取引量、Volumeランキングは入金条件を満たすと順位が表示されます。<br>●入賞圏の順位には現在ティアのリワード額を表示しています。🥩は上位3名へのWagyuギフト（¥10,000相当の和牛チケット）です。",
     rankingNotePre: "●大会開始前のエントリー確認表示です。Depositはこれまでの累計入金額です（参考表示）。<br>●リワード対象の判定は大会期間中の入金 200 USDC以上で行われます（大会開始後に期間中の入金で判定されます）。<br>●大会開始後はDeposit欄に代わりCAPITAL（大会開始時エクイティ＋期間中入金の合計）が表示されます。<br>●ランキング・ROI等の数値は大会開始後に表示されます。",
     volTotalLabel: "Total Volume: ",
     rulesTitle: "大会規約",
@@ -204,7 +204,7 @@ const I18N = {
     rewardNote: "●The prize pool varies across four tiers based on the total trading volume (entered accounts only) during the competition.<br>●The top three in each track will also receive a Wagyu gift (worth ¥10,000).",
     refresh: "🔄 Refresh",
     sortLabel: "Rank by:",
-    rankingNote: "●Capital is the ROI denominator, calculated as (starting equity + deposits during the competition).<br>●Traders who reach the minimum volume ($50,000) get a ✅ next to their name.<br>●Traders who have not met the deposit requirement (200 USDC or more during the competition) are shown with a gray name.<br>●Ranks appear in the ROI ranking once both the deposit and minimum-volume requirements are met, and in the Volume ranking once the deposit requirement is met.<br>●Prize-zone ranks show the reward amount for the current tier. 🥩 marks the Wagyu gift for the top 3 (a beef ticket worth ¥10,000).",
+    rankingNote: "●Capital is the ROI denominator, calculated as (starting equity + deposits during the competition).<br>●Traders who reach the minimum volume ($50,000) get a ✅ next to their name.<br>●Traders who have not met the deposit requirement (200 USDC or more during the competition) are shown with a yellow-bordered row and a gray name.<br>●Ranks appear in the ROI ranking once both the deposit and minimum-volume requirements are met, and in the Volume ranking once the deposit requirement is met.<br>●Prize-zone ranks show the reward amount for the current tier. 🥩 marks the Wagyu gift for the top 3 (a beef ticket worth ¥10,000).",
     rankingNotePre: "●Pre-competition entry check. Deposit shows your total deposits so far (for reference).<br>●Reward eligibility is determined by deposits of 200 USDC or more during the competition period (evaluated after the competition starts).<br>●Once the competition starts, the Deposit column will be replaced by CAPITAL (starting equity + deposits during the competition).<br>●Rankings, ROI and other stats will appear once the competition starts.",
     volTotalLabel: "Total Volume: ",
     rulesTitle: "Terms & Conditions",
@@ -959,12 +959,14 @@ function renderRankingPage(body, data, page, eligibleCount, prizes, preStart, hi
 
     // 開始前はエントリー確認表示: 累計入金のみ（順位・入賞ハイライトなし）
     if (preStart) {
-      const warnClass = minDepositMet(item) ? "" : " baseline-warn";
+      const preWarn = !minDepositMet(item);
+      if (preWarn) tr.classList.add("deposit-warn");
+      const preWarnClass = preWarn ? "baseline-warn" : "";
       const deposit = item.totalDeposits || 0;
       tr.innerHTML = `
         <td>-</td>
-        <td class="${warnClass}">${traderCell(item)}</td>
-        <td class="${warnClass}">$${deposit.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
+        <td class="${preWarnClass}">${traderCell(item)}</td>
+        <td class="${preWarnClass}">$${deposit.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
       `;
       body.appendChild(tr);
       return;
@@ -995,10 +997,11 @@ function renderRankingPage(body, data, page, eligibleCount, prizes, preStart, hi
       rankHtml += `<div class="prize-amount">$${prizes[rankIndex].toLocaleString()}${steak}</div>`;
     }
 
-    // グレー表示条件は各部門の従来ルールを踏襲
-    // （ROI: 入金未達 / Volume: ランキング対象外）
+    // 入金未達は行の背景・枠色（黄色）＋Trader/Capitalのグレー文字で表現する
+    // 判定条件は各部門の従来ルールを踏襲（ROI: 入金未達 / Volume: ランキング対象外）
     const warn = rankingSort === "roi" ? !minDepositMet(item) : !ranked;
-    const warnClass = warn ? " baseline-warn" : "";
+    if (warn) tr.classList.add("deposit-warn");
+    const warnClass = warn ? "baseline-warn" : "";
 
     const roiClass = (item.roi || 0) >= 0 ? "roi-positive" : "roi-negative";
     const pnl = item.pnl || 0;
