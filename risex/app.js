@@ -79,6 +79,17 @@ const I18N = {
     entryErrDupName: "この参加名は既に使用されています。別の名前を入力してください。",
     entryErrNetwork: "送信に失敗しました。時間をおいて再度お試しください。",
     entryErrApiUnset: "エントリー受付は現在準備中です。しばらくお待ちください。",
+    // Discord連携
+    discordPerk1: "優勝者にはboarding bridgeで「和牛王」ロールを付与！",
+    discordPerk2: "「和牛王」ロール保持者への特典も検討中です。",
+    discordPerk3: "boarding bridgeでは大会状況を随時実況中！一緒に盛り上がりましょう！",
+    discordLinkLead: "「和牛王」ロール付与をスムーズに行うため、大会参加者はDiscordアカウントの連携にご協力ください（連携は任意です）。",
+    discordLinkBtn: "Discordアカウントを連携する",
+    discordLinked: "連携済み: ",
+    discordLinkNote: "エントリー時に認証したXアカウントに紐付けて連携されます。X未認証の場合は先に認証ポップアップが開きます。",
+    discordErrLink: "Discord連携に失敗しました。時間をおいて再度お試しください。",
+    discordErrAlreadyLinked: "このDiscordアカウントは既に別の参加者と連携されています。",
+    discordJoinBtn: "boarding bridgeに参加する",
     tradingTitle: "取引条件",
     condEntry: '大会への参加には、本ページのエントリーフォームからのエントリーが必要です。',
     condReferral: 'リファラルの種類は問わず、他のリファラルやリファラルなしで作成したRISExアカウントでも参加できます。',
@@ -170,6 +181,17 @@ const I18N = {
     entryErrDupName: "This display name is already taken. Please choose another.",
     entryErrNetwork: "Failed to submit. Please try again later.",
     entryErrApiUnset: "Entry submission is being prepared. Please check back soon.",
+    // Discord linking
+    discordPerk1: "The winner will receive the \"Wagyu King\" role on boarding bridge!",
+    discordPerk2: "Perks for \"Wagyu King\" role holders are also under consideration.",
+    discordPerk3: "Live competition updates are posted on boarding bridge — come join the fun!",
+    discordLinkLead: "To help us assign the \"Wagyu King\" role smoothly, participants are encouraged to link their Discord account (linking is optional).",
+    discordLinkBtn: "Link Discord Account",
+    discordLinked: "Linked: ",
+    discordLinkNote: "Your Discord account will be linked to the X account verified at entry. If not verified yet, the X verification popup opens first.",
+    discordErrLink: "Failed to link Discord. Please try again later.",
+    discordErrAlreadyLinked: "This Discord account is already linked to another participant.",
+    discordJoinBtn: "Join boarding bridge",
     tradingTitle: "Trading Requirements",
     condEntry: 'Entry via the entry form on this page is required to participate.',
     condReferral: 'Any referral is accepted — accounts created with other referrals or without a referral are also eligible.',
@@ -239,9 +261,12 @@ function applyI18n() {
   const btn = document.getElementById("lang-toggle");
   if (btn) btn.textContent = currentLang === "ja" ? "EN" : "日本語";
   updateXAuthStatus();
-  // 表示中のエントリーフォームエラーも言語に追従させる
-  const errEl = document.getElementById("entry-error");
-  if (errEl && errEl.dataset.errKey) errEl.textContent = t(errEl.dataset.errKey);
+  updateDiscordStatus();
+  // 表示中のエラーメッセージも言語に追従させる
+  ["entry-error", "discord-error"].forEach((id) => {
+    const errEl = document.getElementById(id);
+    if (errEl && errEl.dataset.errKey) errEl.textContent = t(errEl.dataset.errKey);
+  });
 }
 
 function toggleLang() {
@@ -281,6 +306,7 @@ const sbClient = window.supabase
   : null;
 
 const X_AUTH_POPUP_NAME = "risex-x-auth";
+const DISCORD_POPUP_NAME = "risex-discord-link";
 
 const EVM_ADDRESS_RE = /^0x[0-9a-fA-F]{40}$/;
 
@@ -293,23 +319,67 @@ const ENTRY_NAME_STRIP_RE = /[^A-Za-z0-9_]/g;
 let xAuth = null;
 let entrySubmitting = false;
 
+// 連携済みDiscordアカウント（{ username } または null）
+let discordAuth = null;
+// X未認証時にDiscord連携が押された場合、X認証完了後に連携を自動再開する
+let discordPendingAfterAuth = false;
+
 function xUsernameFromSession(session) {
   const m = (session && session.user && session.user.user_metadata) || {};
   return m.user_name || m.preferred_username || m.name || "";
 }
 
+// セッションのユーザーから連携済みDiscord identityを取り出す
+function discordFromUser(user) {
+  const identities = (user && user.identities) || [];
+  const d = identities.find((i) => i.provider === "discord");
+  if (!d) return null;
+  const md = d.identity_data || {};
+  const username =
+    (md.custom_claims && md.custom_claims.global_name) ||
+    md.name || md.full_name || md.user_name || "";
+  return { username };
+}
+
 function setXAuthFromSession(session) {
   xAuth = session ? { username: xUsernameFromSession(session) } : null;
+  discordAuth = session ? discordFromUser(session.user) : null;
   updateXAuthStatus();
+  updateDiscordStatus();
+}
+
+// Discord連携ポップアップでOAuthエラーが返された場合（別ユーザーに連携済み等）:
+// セッションイベントは発火しないため、URLのエラーを親に伝えて閉じる
+if (window.opener && window.name === DISCORD_POPUP_NAME) {
+  const search = new URLSearchParams(location.search || "");
+  const hash = new URLSearchParams((location.hash || "").replace(/^#/, ""));
+  const errDesc = search.get("error_description") || hash.get("error_description");
+  if (errDesc) {
+    try {
+      window.opener.postMessage({ type: "risex-discord-link", ok: false, errDesc }, location.origin);
+    } catch (e) { /* opener が閉じられていた場合は無視 */ }
+    window.close();
+  }
 }
 
 if (sbClient) {
   sbClient.auth.onAuthStateChange((event, session) => {
-    // 認証ポップアップとして開かれている場合: 認証成功を親に伝えて閉じる
+    // X認証ポップアップとして開かれている場合: 認証成功を親に伝えて閉じる
     if (window.opener && window.name === X_AUTH_POPUP_NAME) {
       if (session) {
         try {
           window.opener.postMessage({ type: "risex-x-auth", ok: true }, location.origin);
+        } catch (e) { /* opener が閉じられていた場合は無視 */ }
+        window.close();
+      }
+      return;
+    }
+    // Discord連携ポップアップの場合: 既存セッション復元（INITIAL_SESSION）でも
+    // 発火するため、discord identityが実際に紐付いてから親に通知して閉じる
+    if (window.opener && window.name === DISCORD_POPUP_NAME) {
+      if (session && discordFromUser(session.user)) {
+        try {
+          window.opener.postMessage({ type: "risex-discord-link", ok: true }, location.origin);
         } catch (e) { /* opener が閉じられていた場合は無視 */ }
         window.close();
       }
@@ -365,6 +435,36 @@ function showEntryError(key) {
   }
 }
 
+function showDiscordError(key) {
+  const el = document.getElementById("discord-error");
+  if (!el) return;
+  if (key) {
+    el.textContent = t(key);
+    el.dataset.errKey = key;
+    el.style.display = "block";
+  } else {
+    el.textContent = "";
+    delete el.dataset.errKey;
+    el.style.display = "none";
+  }
+}
+
+// Discord連携状態の表示を更新する（言語切替時にも呼ばれる）
+function updateDiscordStatus() {
+  const statusEl = document.getElementById("discord-link-status");
+  const btn = document.getElementById("discord-link-btn");
+  if (!statusEl || !btn) return;
+  if (discordAuth) {
+    statusEl.textContent = `${t("discordLinked")}@${discordAuth.username}`;
+    statusEl.classList.add("verified");
+    btn.style.display = "none";
+  } else {
+    statusEl.textContent = "";
+    statusEl.classList.remove("verified");
+    btn.style.display = "";
+  }
+}
+
 // X認証状態の表示を更新する（言語切替時にも呼ばれる）
 function updateXAuthStatus() {
   const statusEl = document.getElementById("x-auth-status");
@@ -381,12 +481,23 @@ function updateXAuthStatus() {
   }
 }
 
-async function startXAuth() {
+// 認可URLをポップアップで開く。ブロックされた場合は false を返す
+function openAuthPopup(url, name) {
+  const w = 500;
+  const h = 700;
+  const left = window.screenX + (window.outerWidth - w) / 2;
+  const top = window.screenY + (window.outerHeight - h) / 2;
+  const popup = window.open(url, name, `width=${w},height=${h},left=${left},top=${top}`);
+  return !!popup;
+}
+
+// showErr: エラー表示先（エントリーフォーム or Discordカード）
+async function startXAuth(showErr = showEntryError) {
   if (!sbClient) {
-    showEntryError("entryErrNetwork");
+    showErr("entryErrNetwork");
     return;
   }
-  showEntryError(null);
+  showErr(null);
   try {
     // 認可URLだけ取得し、ページ遷移せずポップアップで開く
     const { data, error } = await sbClient.auth.signInWithOAuth({
@@ -397,30 +508,85 @@ async function startXAuth() {
       },
     });
     if (error) throw error;
-    const w = 500;
-    const h = 700;
-    const left = window.screenX + (window.outerWidth - w) / 2;
-    const top = window.screenY + (window.outerHeight - h) / 2;
-    const popup = window.open(
-      data.url,
-      X_AUTH_POPUP_NAME,
-      `width=${w},height=${h},left=${left},top=${top}`
-    );
-    if (!popup) showEntryError("entryErrPopup");
+    if (!openAuthPopup(data.url, X_AUTH_POPUP_NAME)) showErr("entryErrPopup");
   } catch (e) {
     console.error("x auth failed:", e);
-    showEntryError("entryErrXFailed");
+    showErr("entryErrXFailed");
+  }
+}
+
+// Discordアカウント連携（Supabase Identity Linking）。
+// X認証済みセッションに対して discord identity を追加で紐付ける。
+// 未認証の場合は先にX認証ポップアップを開き、完了後に自動で連携を再開する
+async function startDiscordLink() {
+  if (!sbClient) {
+    showDiscordError("discordErrLink");
+    return;
+  }
+  showDiscordError(null);
+
+  const { data: sess } = await sbClient.auth.getSession();
+  if (!sess.session) {
+    discordPendingAfterAuth = true;
+    startXAuth(showDiscordError);
+    return;
+  }
+
+  try {
+    const { data, error } = await sbClient.auth.linkIdentity({
+      provider: "discord",
+      options: {
+        redirectTo: location.origin + location.pathname,
+        skipBrowserRedirect: true,
+      },
+    });
+    if (error) throw error;
+    if (!openAuthPopup(data.url, DISCORD_POPUP_NAME)) showDiscordError("entryErrPopup");
+  } catch (e) {
+    console.error("discord link failed:", e);
+    if (/already linked/i.test(e.message || "")) showDiscordError("discordErrAlreadyLinked");
+    else showDiscordError("discordErrLink");
   }
 }
 
 // 認証ポップアップからの完了通知を受け取り、セッションを反映する
 window.addEventListener("message", async (ev) => {
   if (ev.origin !== location.origin) return;
-  if (!ev.data || ev.data.type !== "risex-x-auth" || !sbClient) return;
-  const { data } = await sbClient.auth.getSession();
-  setXAuthFromSession(data.session);
-  if (data.session) showEntryError(null);
-  else showEntryError("entryErrXFailed");
+  if (!ev.data || !sbClient) return;
+
+  if (ev.data.type === "risex-x-auth") {
+    const { data } = await sbClient.auth.getSession();
+    setXAuthFromSession(data.session);
+    if (data.session) {
+      showEntryError(null);
+      // Discord連携ボタン起点のX認証だった場合は続けて連携へ進む
+      if (discordPendingAfterAuth) {
+        discordPendingAfterAuth = false;
+        startDiscordLink();
+      }
+    } else if (discordPendingAfterAuth) {
+      discordPendingAfterAuth = false;
+      showDiscordError("entryErrXFailed");
+    } else {
+      showEntryError("entryErrXFailed");
+    }
+    return;
+  }
+
+  if (ev.data.type === "risex-discord-link") {
+    if (ev.data.ok === false) {
+      showDiscordError(
+        /already linked/i.test(ev.data.errDesc || "") ? "discordErrAlreadyLinked" : "discordErrLink"
+      );
+      return;
+    }
+    // linkIdentity後のユーザー情報（identities）をサーバーから取り直して反映する
+    const { data } = await sbClient.auth.getUser();
+    discordAuth = data && data.user ? discordFromUser(data.user) : null;
+    updateDiscordStatus();
+    if (discordAuth) showDiscordError(null);
+    else showDiscordError("discordErrLink");
+  }
 });
 
 async function submitEntry(ev) {

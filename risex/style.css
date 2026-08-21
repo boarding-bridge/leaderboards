@@ -819,6 +819,67 @@ button:active {
   margin-bottom: 16px;
 }
 
+/* Discordアイコン（ボタン内・インラインSVG） */
+.discord-ico {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+}
+
+/* Discord連携ボタンの行（カード内・中央揃え） */
+.discord-link-row {
+  justify-content: center;
+}
+
+/* Discord連携ボタン（エントリーボタンと同系の緑アクセント） */
+.discord-link-btn {
+  padding: 10px 20px;
+  background: var(--accent-color);
+  border: none;
+  border-radius: 8px;
+  color: #0c0e12;
+  font-size: 0.85rem;
+  font-weight: 800;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background 0.2s, box-shadow 0.2s;
+}
+
+.discord-link-btn:hover {
+  background: var(--accent-dim);
+  box-shadow: 0 0 20px var(--accent-glow);
+}
+
+/* Discord招待ボタン（ページ末尾） */
+.discord-join-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin: 30px auto 0;
+  max-width: 420px;
+  padding: 14px 32px;
+  background: linear-gradient(135deg, #5865f2, #4752c4);
+  border-radius: 12px;
+  color: #fff;
+  text-align: center;
+  text-decoration: none;
+  font-weight: 800;
+  font-size: 1rem;
+  box-shadow: 0 0 24px rgba(88, 101, 242, 0.35), 0 8px 24px rgba(0, 0, 0, 0.35);
+  transition: transform 0.15s, box-shadow 0.2s;
+}
+
+/* カード内に置く場合の余白調整 */
+.discord-join-btn--card {
+  margin: 16px auto 0;
+}
+
+.discord-join-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 0 40px rgba(88, 101, 242, 0.55), 0 10px 28px rgba(0, 0, 0, 0.4);
+}
+
 /* Animations */
 @keyframes fadeIn {
   from { opacity: 0; transform: translateY(10px); }
