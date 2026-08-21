@@ -1073,9 +1073,44 @@ button:active {
     font-size: 0.8rem;
   }
 
+  /* 順位タブ: button { width:100% } を打ち消して小さなピル型のまま横並びにする */
   .page-tab {
+    width: auto;
     font-size: 0.72rem;
     padding: 4px 8px;
+  }
+
+  /* ソート切替: ラベルを1行目に、ROI/Volumeを2分割セグメント型にして
+     順位タブと見た目を明確に区別する */
+  .sort-tabs {
+    gap: 0;
+  }
+
+  .sort-tabs-label {
+    flex-basis: 100%;
+    margin: 0 0 8px 0;
+  }
+
+  .sort-tab {
+    width: auto;
+    flex: 1;
+    position: relative;
+    padding: 9px 0;
+    font-size: 0.85rem;
+    border-radius: 0;
+  }
+
+  .sort-tab:first-of-type {
+    border-radius: 8px 0 0 8px;
+  }
+
+  .sort-tab:last-of-type {
+    border-radius: 0 8px 8px 0;
+    margin-left: -1px; /* 境界の枠線を重ねて1本にする */
+  }
+
+  .sort-tab--active {
+    z-index: 1; /* 重なった境界でもアクティブ側の枠色を前面に出す */
   }
 
   .lang-toggle {
