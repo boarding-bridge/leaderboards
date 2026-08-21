@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Wagyu Bull Run RISEx Cup</title>
-  <link rel="stylesheet" href="style.css?v=9">
+  <link rel="stylesheet" href="style.css?v=11">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
@@ -132,55 +132,37 @@
       <button class="refresh-btn" onclick="fetchData()"><span data-i18n="refresh">🔄 更新</span></button>
     </div>
 
-    <!-- ROI ランキング -->
+    <!-- ランキング（ROI / Volume 統合テーブル） -->
     <div class="dashboard-card animate-fade-in" style="animation-delay: 0.2s;">
-      <h2 class="section-title">ROI Ranking</h2>
-      <div class="blind-message" id="roi-blind" style="display:none;"></div>
-      <div id="roi-content">
+      <h2 class="section-title">Ranking</h2>
+      <div class="blind-message" id="ranking-blind" style="display:none;"></div>
+      <div id="ranking-content">
+        <p style="color: var(--text-secondary); margin: 0 0 12px 0;"><span data-i18n="volTotalLabel">Total Volume: </span><span id="vol-total" style="color: var(--text-primary); font-weight: 600;">—</span></p>
+        <div class="sort-tabs" id="sort-tabs">
+          <span class="sort-tabs-label" data-i18n="sortLabel">ランキング表示:</span>
+          <button type="button" class="sort-tab sort-tab--active" data-sort="roi">ROI</button>
+          <button type="button" class="sort-tab" data-sort="volume">Volume</button>
+        </div>
         <div class="table-responsive">
           <table class="leaderboard-table">
             <thead>
-              <tr>
+              <tr id="ranking-head-row">
                 <th>Rank</th>
                 <th>Trader</th>
                 <th>Capital</th>
                 <th>ROI</th>
                 <th>PnL</th>
-              </tr>
-            </thead>
-            <tbody id="roi-ranking-body"></tbody>
-          </table>
-        </div>
-        <p style="color: var(--text-secondary); font-size: 0.75rem; margin-top: 8px;" data-i18n-html="roiNote">
-          ●CapitalはROI計算の分母となり、計算式は（大会開始時のエクイティ＋期間中の入金）です。<br>
-          ●最低取引量（$50,000）を達成すると名前に ✅ がつきます。<br>
-          ●入金条件（大会期間中に 200 USDC以上）を満たしていない場合、名前がグレーで表示されます。<br>
-          ●両条件を満たした場合、ランキング内に表示されます。
-        </p>
-      </div>
-    </div>
-
-    <!-- Volume ランキング -->
-    <div class="dashboard-card animate-fade-in" style="animation-delay: 0.3s;">
-      <h2 class="section-title">Volume Ranking</h2>
-      <div class="blind-message" id="vol-blind" style="display:none;"></div>
-      <div id="vol-content">
-        <p style="color: var(--text-secondary); margin: 0 0 12px 0;"><span data-i18n="volTotalLabel">Total Volume: </span><span id="vol-total" style="color: var(--text-primary); font-weight: 600;">—</span></p>
-        <div class="table-responsive">
-          <table class="leaderboard-table">
-            <thead>
-              <tr>
-                <th>Rank</th>
-                <th>Trader</th>
                 <th>Volume</th>
               </tr>
             </thead>
-            <tbody id="vol-ranking-body"></tbody>
+            <tbody id="ranking-body"></tbody>
           </table>
         </div>
-        <p style="color: var(--text-secondary); font-size: 0.75rem; margin-top: 8px;" data-i18n-html="volNote">
+        <p style="color: var(--text-secondary); font-size: 0.75rem; margin-top: 8px;" data-i18n-html="rankingNote">
+          ●CapitalはROI計算の分母となり、計算式は（大会開始時のエクイティ＋期間中の入金）です。<br>
+          ●最低取引量（$50,000）を達成すると名前に ✅ がつきます。<br>
           ●入金条件（大会期間中に 200 USDC以上）を満たしていない場合、名前がグレーで表示されます。<br>
-          ●条件を満たした場合、ランキング内に表示されます。
+          ●ROIランキングは入金条件と最低取引量、Volumeランキングは入金条件を満たすと順位が表示されます。
         </p>
       </div>
     </div>
@@ -276,6 +258,6 @@
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="app.js?v=15"></script>
+  <script src="app.js?v=18"></script>
 </body>
 </html>

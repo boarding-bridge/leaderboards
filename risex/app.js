@@ -100,10 +100,10 @@ const I18N = {
     rewardCurrentVol: "現在の Total Volume: ",
     rewardNote: "●賞金プールは大会期間中の総取引量（対象アカウントのみ）に応じて4ティアで変動します。<br>●各部門の上位3名にはWagyuギフト（¥10,000相当）が贈られます。",
     refresh: "🔄 更新",
-    roiNote: "●CapitalはROI計算の分母となり、計算式は（大会開始時のエクイティ＋期間中の入金）です。<br>●最低取引量（$50,000）を達成すると名前に ✅ がつきます。<br>●入金条件（大会期間中に 200 USDC以上）を満たしていない場合、名前がグレーで表示されます。<br>●両条件を満たした場合、ランキング内に表示されます。",
-    roiNotePre: "●大会開始前のエントリー確認表示です。Depositはこれまでの累計入金額です（参考表示）。<br>●リワード対象の判定は大会期間中の入金 200 USDC以上で行われます（大会開始後に期間中の入金で判定されます）。<br>●大会開始後はDeposit欄に代わりCAPITAL（大会開始時エクイティ＋期間中入金の合計）が表示されます。<br>●ランキング・ROI等の数値は大会開始後に表示されます。",
+    sortLabel: "ランキング表示:",
+    rankingNote: "●CapitalはROI計算の分母となり、計算式は（大会開始時のエクイティ＋期間中の入金）です。<br>●最低取引量（$50,000）を達成すると名前に ✅ がつきます。<br>●入金条件（大会期間中に 200 USDC以上）を満たしていない場合、名前がグレーで表示されます。<br>●ROIランキングは入金条件と最低取引量、Volumeランキングは入金条件を満たすと順位が表示されます。<br>●入賞圏の順位には現在ティアのリワード額を表示しています。🥩は上位3名へのWagyuギフト（¥10,000相当の和牛チケット）です。",
+    rankingNotePre: "●大会開始前のエントリー確認表示です。Depositはこれまでの累計入金額です（参考表示）。<br>●リワード対象の判定は大会期間中の入金 200 USDC以上で行われます（大会開始後に期間中の入金で判定されます）。<br>●大会開始後はDeposit欄に代わりCAPITAL（大会開始時エクイティ＋期間中入金の合計）が表示されます。<br>●ランキング・ROI等の数値は大会開始後に表示されます。",
     volTotalLabel: "Total Volume: ",
-    volNote: "●入金条件（大会期間中に 200 USDC以上）を満たしていない場合、名前がグレーで表示されます。<br>●条件を満たした場合、ランキング内に表示されます。",
     rulesTitle: "大会規約",
     rule1: "大会期間は2026年8月18日〜9月7日 23:59 JSTとなります。",
     rule2: "本ページのエントリーフォームからエントリーしたアカウントによる取引のみがランキング・賞金ティア判定の対象となります。登録時のリファラルの種類は問いません。",
@@ -135,6 +135,7 @@ const I18N = {
     roiTrack: "ROI 部門",
     volTrack: "Trading Vol. 部門",
     qualifyTitle: "Vol. $50,000+ 達成",
+    wagyuTicket: "Wagyuギフト（¥10,000相当の和牛チケット）",
     capitalPreparing: "準備中",
   },
   en: {
@@ -202,10 +203,10 @@ const I18N = {
     rewardCurrentVol: "Current Total Volume: ",
     rewardNote: "●The prize pool varies across four tiers based on the total trading volume (entered accounts only) during the competition.<br>●The top three in each track will also receive a Wagyu gift (worth ¥10,000).",
     refresh: "🔄 Refresh",
-    roiNote: "●Capital is the ROI denominator, calculated as (starting equity + deposits during the competition).<br>●Traders who reach the minimum volume ($50,000) get a ✅ next to their name.<br>●Traders who have not met the deposit requirement (200 USDC or more during the competition) are shown with a gray name.<br>●Traders meeting both conditions are shown in the ranking.",
-    roiNotePre: "●Pre-competition entry check. Deposit shows your total deposits so far (for reference).<br>●Reward eligibility is determined by deposits of 200 USDC or more during the competition period (evaluated after the competition starts).<br>●Once the competition starts, the Deposit column will be replaced by CAPITAL (starting equity + deposits during the competition).<br>●Rankings, ROI and other stats will appear once the competition starts.",
+    sortLabel: "Rank by:",
+    rankingNote: "●Capital is the ROI denominator, calculated as (starting equity + deposits during the competition).<br>●Traders who reach the minimum volume ($50,000) get a ✅ next to their name.<br>●Traders who have not met the deposit requirement (200 USDC or more during the competition) are shown with a gray name.<br>●Ranks appear in the ROI ranking once both the deposit and minimum-volume requirements are met, and in the Volume ranking once the deposit requirement is met.<br>●Prize-zone ranks show the reward amount for the current tier. 🥩 marks the Wagyu gift for the top 3 (a beef ticket worth ¥10,000).",
+    rankingNotePre: "●Pre-competition entry check. Deposit shows your total deposits so far (for reference).<br>●Reward eligibility is determined by deposits of 200 USDC or more during the competition period (evaluated after the competition starts).<br>●Once the competition starts, the Deposit column will be replaced by CAPITAL (starting equity + deposits during the competition).<br>●Rankings, ROI and other stats will appear once the competition starts.",
     volTotalLabel: "Total Volume: ",
-    volNote: "●Traders who have not met the deposit requirement (200 USDC or more during the competition) are shown with a gray name.<br>●Traders meeting the condition are shown in the ranking.",
     rulesTitle: "Terms & Conditions",
     rule1: "The competition will run from Aug 18 to Sep 7, 2026, until 23:59 JST.",
     rule2: "Only trades made by accounts entered via the entry form on this page count toward the rankings and prize tier determination. Any referral used at registration is accepted.",
@@ -237,6 +238,7 @@ const I18N = {
     roiTrack: "ROI Track",
     volTrack: "Volume Track",
     qualifyTitle: "Vol. $50,000+ reached",
+    wagyuTicket: "Wagyu gift (a beef ticket worth ¥10,000)",
     capitalPreparing: "Preparing",
   },
 };
@@ -798,25 +800,18 @@ async function fetchBlindMode() {
 }
 
 function applyBlindMode(blindData) {
-  const roiBlind = document.getElementById("roi-blind");
-  const volBlind = document.getElementById("vol-blind");
-  const roiContent = document.getElementById("roi-content");
-  const volContent = document.getElementById("vol-content");
+  const blindEl = document.getElementById("ranking-blind");
+  const contentEl = document.getElementById("ranking-content");
 
   if (blindData) {
     const msg = (currentLang === "en" && blindData.message_en) ? blindData.message_en : (blindData.message || "");
-    roiBlind.textContent = msg;
-    volBlind.textContent = msg;
-    roiBlind.style.display = "";
-    volBlind.style.display = "";
-    roiContent.style.display = "none";
-    volContent.style.display = "none";
+    blindEl.textContent = msg;
+    blindEl.style.display = "";
+    contentEl.style.display = "none";
     return true;
   }
-  roiBlind.style.display = "none";
-  volBlind.style.display = "none";
-  roiContent.style.display = "";
-  volContent.style.display = "";
+  blindEl.style.display = "none";
+  contentEl.style.display = "";
   return false;
 }
 
@@ -854,6 +849,32 @@ function isPreStart() {
   return Number.isFinite(startMs) && Date.now() < startMs;
 }
 
+// ランキングの表示モード（統合テーブルのソート切替: "roi" | "volume"）
+let rankingSort = "roi";
+
+// 表示モードに応じた並び順を返す。
+// ROIモード: 公式rank（roiRank）最優先、無ければ対象者（入金200 USDC＋
+// Vol $50k達成）をROI降順で並べ、未達者はその下に参考表示。
+// 同率は取引量で決定（提案書 Notes）。
+// Volumeモード: 公式rank（volumeRank）優先、無ければVolume降順。
+// TODO: 同率時は qualifying capital で決定（RISEx仕様 v3）。大小の方向が未確定のため暫定で小さい方を上位とする
+function sortForMode(participants, mode) {
+  if (mode === "roi") {
+    const byRoi = (a, b) =>
+      compareOfficialRank(a.roiRank, b.roiRank) ||
+      (b.roi - a.roi) ||
+      ((b.tradedVolume || 0) - (a.tradedVolume || 0));
+    const eligible = participants.filter(isRoiEligible).sort(byRoi);
+    const rest = participants.filter((p) => !isRoiEligible(p)).sort(byRoi);
+    return { data: [...eligible, ...rest], eligibleCount: eligible.length };
+  }
+  const byVol = (a, b) =>
+    compareOfficialRank(a.volumeRank, b.volumeRank) ||
+    ((b.tradedVolume || 0) - (a.tradedVolume || 0)) ||
+    (Math.max(a.qualifyingCapital || 0, 0) - Math.max(b.qualifyingCapital || 0, 0));
+  return { data: [...participants].sort(byVol), eligibleCount: 0 };
+}
+
 function render() {
   const isBlind = applyBlindMode(lastBlind);
 
@@ -871,33 +892,7 @@ function render() {
   const preStart = isPreStart();
 
   if (!isBlind) {
-    if (preStart) {
-      // 入金額の大きい順に表示（順位・入賞ハイライトなし）
-      const byDeposit = (a, b) => (b.totalDeposits || 0) - (a.totalDeposits || 0);
-      const sorted = [...participants].sort(byDeposit);
-      renderRoiRanking(sorted, 0, tier.prizes.length, true);
-      renderVolRanking(sorted, totalVolume, tier.prizes.length, true);
-    } else {
-      // ROIランキング: 公式rank（roiRank）があればそれを最優先し、
-      // 無ければ対象者（入金200 USDC＋Vol $50k達成）をROI降順で並べる。
-      // 未達者はその下に参考表示。同率は取引量で決定（提案書 Notes）
-      const byRoi = (a, b) =>
-        compareOfficialRank(a.roiRank, b.roiRank) ||
-        (b.roi - a.roi) ||
-        ((b.tradedVolume || 0) - (a.tradedVolume || 0));
-      const eligible = participants.filter(isRoiEligible).sort(byRoi);
-      const rest = participants.filter((p) => !isRoiEligible(p)).sort(byRoi);
-      renderRoiRanking([...eligible, ...rest], eligible.length, tier.prizes.length, false);
-
-      // Volumeランキング: 公式rank（volumeRank）優先、無ければVolume降順
-      // TODO: 同率時は qualifying capital で決定（RISEx仕様 v3）。大小の方向が未確定のため暫定で小さい方を上位とする
-      const byVol = (a, b) =>
-        compareOfficialRank(a.volumeRank, b.volumeRank) ||
-        ((b.tradedVolume || 0) - (a.tradedVolume || 0)) ||
-        (Math.max(a.qualifyingCapital || 0, 0) - Math.max(b.qualifyingCapital || 0, 0));
-      const volSorted = [...participants].sort(byVol);
-      renderVolRanking(volSorted, totalVolume, tier.prizes.length, false);
-    }
+    renderRanking(participants, totalVolume, tier.prizes, preStart);
   }
 
   // リワードテーブル
@@ -944,10 +939,17 @@ function isCapitalPending(item) {
   return (item.qualifyingCapital ?? 0) < 0;
 }
 
-function renderRoiPage(body, data, page, eligibleCount, prizeCount, preStart, hideCapital) {
+function renderRankingPage(body, data, page, eligibleCount, prizes, preStart, hideCapital) {
   body.innerHTML = "";
+  const prizeCount = prizes.length;
   const start = page * INITIAL_DISPLAY_COUNT;
   const slice = data.slice(start, start + INITIAL_DISPLAY_COUNT);
+
+  // Volumeモードの順位は対象者（公式判定 or 最低入金達成）のみで採番し、
+  // 対象外は "-" 表示（リワード対象外）。ページ前分を先に数えておく
+  let volRank = rankingSort === "volume"
+    ? data.slice(0, start).filter(isVolEligible).length
+    : 0;
 
   slice.forEach((item, i) => {
     const index = start + i;
@@ -955,10 +957,9 @@ function renderRoiPage(body, data, page, eligibleCount, prizeCount, preStart, hi
     tr.className = "animate-fade-in";
     tr.style.animationDelay = `${i * 0.03}s`;
 
-    const warnClass = minDepositMet(item) ? "" : " baseline-warn";
-
     // 開始前はエントリー確認表示: 累計入金のみ（順位・入賞ハイライトなし）
     if (preStart) {
+      const warnClass = minDepositMet(item) ? "" : " baseline-warn";
       const deposit = item.totalDeposits || 0;
       tr.innerHTML = `
         <td>-</td>
@@ -969,12 +970,40 @@ function renderRoiPage(body, data, page, eligibleCount, prizeCount, preStart, hi
       return;
     }
 
+    // モードごとの順位採番。ROIモードは対象者が先頭に並ぶ前提でindex、
+    // Volumeモードは対象者のみを数え上げる
+    let ranked;
+    let rankIndex;
+    if (rankingSort === "roi") {
+      ranked = index < eligibleCount;
+      rankIndex = index;
+    } else {
+      ranked = isVolEligible(item);
+      if (ranked) volRank++;
+      rankIndex = volRank - 1;
+    }
     // 入賞圏ハイライトはランキング対象者のみ
-    if (index < prizeCount && index < eligibleCount) tr.classList.add("rank-prize");
+    const inPrizeZone = ranked && rankIndex < prizeCount;
+    if (inPrizeZone) tr.classList.add("rank-prize");
 
-    const roiClass = item.roi >= 0 ? "roi-positive" : "roi-negative";
+    // 入賞圏には現在ティアのリワード額を表示。上位3名はWagyuギフト（🥩）付き
+    let rankHtml = ranked ? rankCell(rankIndex) : "-";
+    if (inPrizeZone) {
+      const steak = rankIndex < WAGYU_TOP_N
+        ? ` <span class="wagyu-mark" title="${t("wagyuTicket")}">🥩</span>`
+        : "";
+      rankHtml += `<div class="prize-amount">$${prizes[rankIndex].toLocaleString()}${steak}</div>`;
+    }
+
+    // グレー表示条件は各部門の従来ルールを踏襲
+    // （ROI: 入金未達 / Volume: ランキング対象外）
+    const warn = rankingSort === "roi" ? !minDepositMet(item) : !ranked;
+    const warnClass = warn ? " baseline-warn" : "";
+
+    const roiClass = (item.roi || 0) >= 0 ? "roi-positive" : "roi-negative";
     const pnl = item.pnl || 0;
     const pnlClass = pnl >= 0 ? "roi-positive" : "roi-negative";
+    const vol = item.tradedVolume || 0;
 
     // 公式APIが qualifying_capital 未提供（-1）の間は「準備中」表示。
     // 全員未提供の場合は hideCapital で列ごと非表示になる
@@ -983,90 +1012,86 @@ function renderRoiPage(body, data, page, eligibleCount, prizeCount, preStart, hi
       : isCapitalPending(item)
         ? `<td class="${warnClass}">${t("capitalPreparing")}</td>`
         : `<td class="${warnClass}">$${(item.qualifyingCapital || 0).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>`;
+    const roiCell = `<td class="${roiClass}">${(item.roi || 0).toFixed(2)}%</td>`;
+    const pnlCell = `<td class="${pnlClass}">$${pnl.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>`;
+    const volCell = `<td>$${vol.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>`;
+
+    // ソートモードに応じて列順を入れ替える（ソート対象の列を先頭側に）
+    const cells = rankingSort === "roi"
+      ? [capitalCell, roiCell, pnlCell, volCell]
+      : [volCell, capitalCell, roiCell, pnlCell];
 
     tr.innerHTML = `
-      <td>${index < eligibleCount ? rankCell(index) : "-"}</td>
+      <td>${rankHtml}</td>
       <td class="${warnClass}">${traderCell(item)}</td>
-      ${capitalCell}
-      <td class="${roiClass}">${(item.roi || 0).toFixed(2)}%</td>
-      <td class="${pnlClass}">$${pnl.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
+      ${cells.join("\n      ")}
     `;
     body.appendChild(tr);
   });
 }
 
-function renderRoiRanking(data, eligibleCount, prizeCount, preStart) {
-  const body = document.getElementById("roi-ranking-body");
-  const card = body.closest(".dashboard-card");
-
-  // 全員の qualifying_capital が未提供（-1）の間は Capital 列ごと非表示にする
-  const hideCapital = !preStart && data.length > 0 && data.every(isCapitalPending);
-
-  // 開始前はヘッダを Rank / Trader / Deposit の3列に差し替える
-  const theadRow = card.querySelector("thead tr");
-  theadRow.innerHTML = preStart
-    ? "<th>Rank</th><th>Trader</th><th>Deposit</th>"
-    : hideCapital
-      ? "<th>Rank</th><th>Trader</th><th>ROI</th><th>PnL</th>"
-      : "<th>Rank</th><th>Trader</th><th>Capital</th><th>ROI</th><th>PnL</th>";
-
-  // 注記も開始前用に切り替える（言語切替時は render() 経由で再設定される）
-  const noteEl = card.querySelector("[data-i18n-html]");
-  if (noteEl) {
-    const key = preStart ? "roiNotePre" : "roiNote";
-    noteEl.setAttribute("data-i18n-html", key);
-    noteEl.innerHTML = t(key);
-  }
-
-  const showPage = (page) => {
-    renderRoiPage(body, data, page, eligibleCount, prizeCount, preStart, hideCapital);
-    buildPageTabs(card, data.length, page, showPage);
-  };
-  showPage(0);
-}
-
-function renderVolPage(body, data, page, prizeCount, preStart) {
-  body.innerHTML = "";
-  const start = page * INITIAL_DISPLAY_COUNT;
-  const slice = data.slice(start, start + INITIAL_DISPLAY_COUNT);
-
-  // 順位はランキング対象者（公式判定 or 最低入金達成）のみで採番し、
-  // 対象外は "-" 表示（リワード対象外）
-  let qualifiedRank = data.slice(0, start).filter(isVolEligible).length;
-
-  slice.forEach((item, i) => {
-    const tr = document.createElement("tr");
-    tr.className = "animate-fade-in";
-    tr.style.animationDelay = `${i * 0.03}s`;
-
-    const met = isVolEligible(item);
-    if (met) qualifiedRank++;
-    // 開始前は順位・入賞ハイライトを出さない（エントリー確認表示）
-    if (!preStart && met && qualifiedRank <= prizeCount) tr.classList.add("rank-prize");
-
-    const vol = item.tradedVolume || 0;
-    const warnClass = met ? "" : " baseline-warn";
-
-    tr.innerHTML = `
-      <td>${!preStart && met ? rankCell(qualifiedRank - 1) : "-"}</td>
-      <td class="${warnClass}">${traderCell(item)}</td>
-      <td>$${vol.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
-    `;
-    body.appendChild(tr);
-  });
-}
-
-function renderVolRanking(data, totalVolume, prizeCount, preStart) {
+function renderRanking(participants, totalVolume, prizes, preStart) {
   const totalEl = document.getElementById("vol-total");
   if (totalEl && totalVolume != null) {
     totalEl.textContent = `$${totalVolume.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
   }
 
-  const body = document.getElementById("vol-ranking-body");
+  const body = document.getElementById("ranking-body");
   const card = body.closest(".dashboard-card");
 
+  // ソート切替タブ（開始前はランキングが無いため非表示）
+  const sortTabsEl = document.getElementById("sort-tabs");
+  sortTabsEl.style.display = preStart ? "none" : "";
+  sortTabsEl.querySelectorAll(".sort-tab").forEach((b) => {
+    b.classList.toggle("sort-tab--active", b.dataset.sort === rankingSort);
+  });
+  // 再描画のたびにリスナーが積み重ならないよう onclick で上書きする
+  sortTabsEl.onclick = (e) => {
+    const btn = e.target.closest(".sort-tab");
+    if (!btn || btn.dataset.sort === rankingSort) return;
+    rankingSort = btn.dataset.sort;
+    render();
+  };
+
+  let data;
+  let eligibleCount;
+  if (preStart) {
+    // 入金額の大きい順に表示（順位・入賞ハイライトなし）
+    data = [...participants].sort((a, b) => (b.totalDeposits || 0) - (a.totalDeposits || 0));
+    eligibleCount = 0;
+  } else {
+    ({ data, eligibleCount } = sortForMode(participants, rankingSort));
+  }
+
+  // 全員の qualifying_capital が未提供（-1）の間は Capital 列ごと非表示にする
+  const hideCapital = !preStart && data.length > 0 && data.every(isCapitalPending);
+
+  // 開始前はヘッダを Rank / Trader / Deposit の3列に差し替える。
+  // 開始後はソート対象の列（ROI / Volume）を強調し、行と同じ列順で並べる
+  const theadRow = document.getElementById("ranking-head-row");
+  if (preStart) {
+    theadRow.innerHTML = "<th>Rank</th><th>Trader</th><th>Deposit</th>";
+  } else {
+    const thCapital = hideCapital ? "" : "<th>Capital</th>";
+    const thRoi = `<th${rankingSort === "roi" ? ' class="th-sorted"' : ""}>ROI</th>`;
+    const thPnl = "<th>PnL</th>";
+    const thVol = `<th${rankingSort === "volume" ? ' class="th-sorted"' : ""}>Volume</th>`;
+    const ths = rankingSort === "roi"
+      ? [thCapital, thRoi, thPnl, thVol]
+      : [thVol, thCapital, thRoi, thPnl];
+    theadRow.innerHTML = `<th>Rank</th><th>Trader</th>${ths.join("")}`;
+  }
+
+  // 注記も開始前用に切り替える（言語切替時は render() 経由で再設定される）
+  const noteEl = card.querySelector("[data-i18n-html]");
+  if (noteEl) {
+    const key = preStart ? "rankingNotePre" : "rankingNote";
+    noteEl.setAttribute("data-i18n-html", key);
+    noteEl.innerHTML = t(key);
+  }
+
   const showPage = (page) => {
-    renderVolPage(body, data, page, prizeCount, preStart);
+    renderRankingPage(body, data, page, eligibleCount, prizes, preStart, hideCapital);
     buildPageTabs(card, data.length, page, showPage);
   };
   showPage(0);

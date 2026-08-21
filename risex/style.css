@@ -404,6 +404,63 @@ button:active {
   background: rgba(3, 222, 130, 0.12);
 }
 
+/* ランキングソート切替タブ（ROI / Volume） */
+.sort-tabs {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+}
+
+.sort-tabs-label {
+  color: var(--text-secondary);
+  font-size: 0.8rem;
+  margin-right: 4px;
+}
+
+.sort-tab {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--glass-border);
+  color: var(--text-secondary);
+  border-radius: 6px;
+  padding: 5px 14px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  font-family: var(--font-mono);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.sort-tab:hover {
+  background: rgba(3, 222, 130, 0.08);
+}
+
+.sort-tab--active {
+  border-color: var(--accent-color);
+  color: var(--accent-color);
+  background: rgba(3, 222, 130, 0.12);
+}
+
+/* 入賞圏のリワード額表示（Rank列内） */
+.prize-amount {
+  margin-top: 2px;
+  font-size: 0.7rem;
+  font-family: var(--font-mono);
+  color: var(--accent-color);
+  white-space: nowrap;
+}
+
+.wagyu-mark {
+  font-size: 0.9em;
+  cursor: help;
+}
+
+/* ソート対象列のヘッダ強調 */
+.leaderboard-table th.th-sorted {
+  color: var(--accent-color);
+}
+
 /* ボリューム条件達成バッジ */
 .qualify-badge {
   font-size: 0.8em;
