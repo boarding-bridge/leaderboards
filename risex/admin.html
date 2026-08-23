@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <!-- 運営用の内部ページ。公開ページからはリンクせず、検索エンジンにも載せない -->
+  <meta name="robots" content="noindex, nofollow">
+  <title>参加者調査（運営用） | RISEx Cup</title>
+  <link rel="stylesheet" href="style.css?v=14">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+  <style>
+    /* ---- 運営ページ専用スタイル（公開ページの style.css には手を入れない） ---- */
+    .admin-header {
+      display: flex;
+      align-items: baseline;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin: 24px 0 6px;
+    }
+    .admin-header h1 {
+      font-size: 1.5rem;
+      font-weight: 800;
+      color: #fff;
+    }
+    .admin-badge {
+      border: 1px solid var(--warning);
+      border-radius: 999px;
+      color: var(--warning);
+      font-size: 0.72rem;
+      font-weight: 600;
+      font-family: var(--font-mono);
+      padding: 2px 10px;
+    }
+    .admin-note {
+      color: var(--text-secondary);
+      font-size: 0.8rem;
+      margin-bottom: 20px;
+    }
+    .dashboard-card { margin-bottom: 20px; }
+
+    .admin-search {
+      width: 100%;
+      background: rgba(12, 14, 18, 0.65);
+      border: 1px solid var(--border-color);
+      border-radius: 10px;
+      color: var(--text-primary);
+      font-size: 1rem;
+      font-family: inherit;
+      padding: 12px 16px;
+      outline: none;
+    }
+    .admin-search:focus { border-color: var(--glass-border); }
+
+    .roster-row { cursor: pointer; }
+    .roster-row:hover td { background: rgba(3, 222, 130, 0.06); }
+    .roster-row.roster-row--active td { background: rgba(3, 222, 130, 0.12); }
+
+    .mono { font-family: var(--font-mono); font-size: 0.85em; }
+    .addr-link { color: var(--accent-soft); text-decoration: none; }
+    .addr-link:hover { text-decoration: underline; }
+
+    .kv-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 10px;
+      margin-top: 12px;
+    }
+    .kv-item {
+      border: 1px solid var(--border-color);
+      border-radius: 10px;
+      background: rgba(12, 14, 18, 0.5);
+      padding: 10px 14px;
+    }
+    .kv-label { color: var(--text-secondary); font-size: 0.72rem; }
+    .kv-value { font-weight: 600; font-size: 0.98rem; overflow-wrap: anywhere; }
+    .kv-sub { color: var(--text-secondary); font-size: 0.72rem; margin-top: 2px; }
+
+    .badge {
+      display: inline-block;
+      border-radius: 999px;
+      font-size: 0.72rem;
+      font-weight: 600;
+      padding: 2px 10px;
+      white-space: nowrap;
+    }
+    .badge--ok { background: rgba(53, 229, 155, 0.12); color: var(--success); border: 1px solid rgba(53, 229, 155, 0.4); }
+    .badge--warn { background: rgba(250, 197, 21, 0.12); color: var(--warning); border: 1px solid rgba(250, 197, 21, 0.4); }
+    .badge--ng { background: rgba(255, 100, 103, 0.12); color: var(--danger); border: 1px solid rgba(255, 100, 103, 0.4); }
+    .badge--dim { background: rgba(255, 255, 255, 0.05); color: var(--text-secondary); border: 1px solid var(--border-color); }
+
+    .loading-note { color: var(--text-secondary); font-size: 0.85rem; }
+    .error-note { color: var(--danger); font-size: 0.85rem; }
+
+    .pos-num { color: var(--success); }
+    .neg-num { color: var(--danger); }
+
+    .row-out-of-period td { opacity: 0.45; }
+
+    .raw-details { margin-top: 14px; }
+    .raw-details summary {
+      color: var(--text-secondary);
+      font-size: 0.78rem;
+      cursor: pointer;
+      user-select: none;
+    }
+    .raw-details pre {
+      margin-top: 8px;
+      padding: 12px;
+      border: 1px solid var(--border-color);
+      border-radius: 10px;
+      background: rgba(0, 0, 0, 0.35);
+      color: var(--text-secondary);
+      font-family: var(--font-mono);
+      font-size: 0.72rem;
+      line-height: 1.5;
+      overflow-x: auto;
+      max-height: 400px;
+      overflow-y: auto;
+    }
+
+    .trace-cell { font-size: 0.8rem; line-height: 1.5; }
+
+    /* 簡易ログインロック */
+    .lock-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 1000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--bg-color);
+      padding: 20px;
+    }
+    .lock-dialog {
+      width: 100%;
+      max-width: 360px;
+      border: 1px solid var(--glass-border);
+      border-radius: 16px;
+      background: var(--card-bg);
+      padding: 32px 28px;
+    }
+    .lock-dialog h2 {
+      font-size: 1.1rem;
+      font-weight: 800;
+      color: #fff;
+      margin-bottom: 4px;
+    }
+    .lock-dialog .lock-note {
+      color: var(--text-secondary);
+      font-size: 0.78rem;
+      margin-bottom: 18px;
+    }
+    .lock-dialog input {
+      width: 100%;
+      background: rgba(12, 14, 18, 0.65);
+      border: 1px solid var(--border-color);
+      border-radius: 10px;
+      color: var(--text-primary);
+      font-size: 0.95rem;
+      font-family: inherit;
+      padding: 10px 14px;
+      margin-bottom: 12px;
+      outline: none;
+    }
+    .lock-dialog input:focus { border-color: var(--glass-border); }
+    .lock-dialog button {
+      width: 100%;
+      border: none;
+      border-radius: 10px;
+      background: var(--accent-color);
+      color: #0c0e12;
+      font-size: 0.95rem;
+      font-weight: 700;
+      font-family: inherit;
+      padding: 11px 0;
+      cursor: pointer;
+    }
+    .lock-dialog button:hover { background: var(--accent-dim); }
+    .lock-error {
+      color: var(--danger);
+      font-size: 0.8rem;
+      margin-bottom: 12px;
+      display: none;
+    }
+    .leaderboard-table td, .leaderboard-table th { white-space: nowrap; }
+    .section-sub {
+      color: var(--text-secondary);
+      font-size: 0.8rem;
+      margin: 4px 0 10px;
+    }
+  </style>
+</head>
+<body>
+  <!-- 簡易ロック（クライアントサイドのみ。ソース閲覧で突破可能な抑止用） -->
+  <div id="lock-overlay" class="lock-overlay">
+    <form id="lock-form" class="lock-dialog">
+      <h2>参加者調査ページ</h2>
+      <p class="lock-note">運営用の内部ページです。ユーザー名とパスワードを入力してください。</p>
+      <input type="text" id="lock-user" placeholder="ユーザー名" autocomplete="username" spellcheck="false">
+      <input type="password" id="lock-pass" placeholder="パスワード" autocomplete="current-password">
+      <p id="lock-error" class="lock-error">ユーザー名またはパスワードが違います。</p>
+      <button type="submit">ログイン</button>
+    </form>
+  </div>
+
+  <div class="container" id="admin-container" style="display: none;">
+    <div class="admin-header">
+      <h1>参加者調査ページ</h1>
+      <span class="admin-badge">INTERNAL / 運営用</span>
+    </div>
+    <p class="admin-note">
+      問い合わせ対応用の内部ツールです。参加者名・X ID・アドレスで検索すると、RISEx
+      の公開APIから資産状況・入出金（出金は着金状況まで追跡）・ポジション・取引履歴を取得して表示します。
+      このページのURLは参加者へ共有しないでください。
+    </p>
+
+    <!-- 検索・参加者リスト -->
+    <div class="dashboard-card">
+      <h2 class="section-title">参加者検索</h2>
+      <input type="text" id="admin-search" class="admin-search" autocomplete="off" spellcheck="false"
+             placeholder="参加者名 / X ID / アドレス で絞り込み（0x... 全文入力で未登録アドレスも調査可）">
+      <p id="roster-status" class="loading-note" style="margin-top: 10px;">data.json を読み込んでいます...</p>
+      <div class="table-responsive" style="margin-top: 8px;">
+        <table class="leaderboard-table">
+          <thead>
+            <tr>
+              <th>参加者名</th>
+              <th>X</th>
+              <th>アドレス</th>
+              <th>ROI順位</th>
+              <th>Vol順位</th>
+              <th>入金条件</th>
+            </tr>
+          </thead>
+          <tbody id="roster-body"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- 選択した参加者の詳細 -->
+    <div id="detail-root" style="display: none;">
+      <div class="dashboard-card" id="card-profile">
+        <h2 class="section-title">参加者情報</h2>
+        <div id="profile-content"></div>
+      </div>
+
+      <div class="dashboard-card" id="card-summary">
+        <h2 class="section-title">資産サマリ</h2>
+        <div id="summary-content"></div>
+      </div>
+
+      <div class="dashboard-card" id="card-transfers">
+        <h2 class="section-title">入出金履歴</h2>
+        <p class="section-sub">出金行は Blockscout / LayerZero Scan を自動照会し、出金先・宛先チェーン・手数料控除後の着金額・着金状況を表示します。</p>
+        <div id="transfers-content"></div>
+      </div>
+
+      <div class="dashboard-card" id="card-positions">
+        <h2 class="section-title">現在のポジション</h2>
+        <div id="positions-content"></div>
+      </div>
+
+      <div class="dashboard-card" id="card-trades">
+        <h2 class="section-title">取引履歴（大会期間）</h2>
+        <div id="trades-content"></div>
+      </div>
+
+      <div class="dashboard-card" id="card-leaderboard">
+        <h2 class="section-title">公式リーダーボード情報</h2>
+        <div id="leaderboard-content"></div>
+      </div>
+    </div>
+
+    <footer style="text-align: center; color: var(--text-secondary); font-size: 0.8rem; margin: 40px 0;">
+      Internal tool — data via RISEx API / Blockscout / LayerZero Scan
+    </footer>
+  </div>
+
+  <script src="admin.js?v=3"></script>
+</body>
+</html>
