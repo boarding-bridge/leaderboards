@@ -1,17 +1,31 @@
 // 運営用 参加者調査ページ
-// data.json の参加者リストからアドレスを解決し、RISEx 公開API・Blockscout・
-// LayerZero Scan をブラウザから直接照会する（サーバー・秘密情報なし）。
+//
+// 2モードで動作する:
+//   - live  (localhost): RISEx 公開API・Blockscout・LayerZero Scan をブラウザから
+//     直接照会（api.rise.trade のCORSは localhost を許可）。任意アドレスの調査も可。
+//   - enc   (それ以外/GitHub Pages): 運営バックエンドが生成・暗号化した
+//     admin_data.enc をパスフレーズで復号し、静的表示する（CORS不要）。
+//
+// enc モードでは api.rise.trade へは一切アクセスしない。公開 data.json は両モードで
+// 参加者リスト・プロフィール・大会期間の取得に使う（同一オリジンのためCORS不要）。
 
-const API_BASE = "https://api.rise.trade";
+const API_BASE = "https://api.rise.trade"; // live(localhost) モードでのみ使用
 const EXPLORER_BASE = "https://explorer.risechain.com";
 const LZ_SCAN_BASE = "https://scan.layerzero-api.com";
 const COMPETITION_SLUG = "bbdao";
+const ENC_FILE = "admin_data.enc";
+
+const IS_LOCALHOST = location.hostname === "localhost";
+const MODE = IS_LOCALHOST ? "live" : "enc";
 
 // 出来高の合算条件（risex-backend の INCLUDE_LIQUIDATIONS=false に合わせる）
 const INCLUDE_LIQUIDATIONS = false;
 const WITHDRAW_FEE_USDC = 1; // イベントから fee が取れない場合のフォールバック値
 const RECENT_TRADES_SHOWN = 50;
 const MAX_PAGES = 30; // ページング暴走防止（1ページ1000件 × 30）
+
+// RISEチェーン内 vault 預け替え先プロキシ（出金パターン(b)判定用）
+const VAULT_PROXY = "0xf17cca821a2c3e6d41c740a46ca0a937c7097dcf";
 
 // LayerZero v2 EID → チェーン名・explorer のtxリンク
 const LZ_EID_CHAINS = {
@@ -25,10 +39,13 @@ const LZ_EID_CHAINS = {
 
 // ---- 状態 -------------------------------------------------------------
 
-let DB = null;          // 読み込んだ data.json
+let DB = null;          // 公開 data.json（両モードで参照）
+let COMP_META = null;   // 大会期間などのメタ（data.json.meta）
+let ROSTER = [];        // 参加者リスト（data.json.participants）
+let STATIC = null;      // enc モードで復号した admin_data.json
+let MARKETS = null;     // market_id → シンボル
 let currentAddr = null; // 表示中のアドレス（小文字）
-let loadSeq = 0;        // 古い非同期レスポンスの描画を防ぐトークン
-let MARKETS = null;     // market_id → シンボルのキャッシュ（/v1/markets）
+let loadSeq = 0;        // 古い非同期レスポンスの描画を防ぐトークン（live モード）
 
 // ---- 汎用ヘルパー -----------------------------------------------------
 
@@ -126,7 +143,7 @@ async function fetchJson(url) {
   return res.json();
 }
 
-// RISEx API: {data, request_id} 形式。"error" キーがあれば失敗扱い
+// RISEx API: {data, request_id} 形式。"error" キーがあれば失敗扱い（live モード専用）
 async function apiGet(path, params = {}) {
   const qs = new URLSearchParams(params).toString();
   const json = await fetchJson(`${API_BASE}${path}${qs ? "?" + qs : ""}`);
@@ -146,9 +163,13 @@ function errorHtml(err) {
   return `<p class="error-note">取得に失敗しました: ${esc(err && err.message ? err.message : err)}</p>`;
 }
 
+function searchValue() {
+  return document.getElementById("admin-search").value;
+}
+
 // ---- マーケット名解決 -------------------------------------------------
 
-// trade-history 等は market_id しか持たないため、/v1/markets を1回だけ取得して変換する
+// live モードでは /v1/markets を1回だけ取得。enc モードは meta.marketMap を使う。
 async function marketsMap() {
   if (MARKETS) return MARKETS;
   try {
@@ -167,13 +188,13 @@ async function marketsMap() {
 function marketLabel(marketId, fallbackName) {
   if (fallbackName) return fallbackName;
   if (marketId == null) return "—";
-  return MARKETS?.[marketId] ?? `ID:${marketId}`;
+  return MARKETS?.[marketId] ?? MARKETS?.[String(marketId)] ?? `ID:${marketId}`;
 }
 
 // ---- 大会期間 ---------------------------------------------------------
 
 function competitionRangeNs() {
-  const meta = DB?.meta ?? {};
+  const meta = COMP_META ?? {};
   const startMs = meta.competitionStartISO ? Date.parse(meta.competitionStartISO) : null;
   const endMs = meta.competitionEndISO ? Date.parse(meta.competitionEndISO) : null;
   return {
@@ -189,24 +210,36 @@ function inCompetitionPeriod(ms) {
   return ms >= startMs && ms < endMs;
 }
 
-// ---- 参加者リスト（検索） ---------------------------------------------
+// ---- 起動（復号後 / ライブ認証後に共通で呼ぶ） ------------------------
 
-async function init() {
+async function startApp() {
   const statusEl = document.getElementById("roster-status");
   try {
     DB = await fetchJson(`data.json?t=${Date.now()}`);
   } catch (err) {
     statusEl.className = "error-note";
-    statusEl.textContent = `data.json の読み込みに失敗しました: ${err.message}（ローカルではHTTPサーバー経由で開いてください）`;
+    statusEl.textContent = `data.json の読み込みに失敗しました: ${err.message}`;
     return;
   }
-  const meta = DB.meta ?? {};
+  COMP_META = DB.meta ?? {};
+  ROSTER = DB.participants ?? [];
+
+  if (MODE === "enc") {
+    MARKETS = STATIC?.meta?.marketMap ?? {};
+  } else {
+    marketsMap(); // 先行取得（失敗しても market_id 表示にフォールバック）
+  }
+
+  const genLine = (MODE === "enc" && STATIC?.meta?.generatedAtUTC)
+    ? `調査データ生成: ${fmtJst(Date.parse(STATIC.meta.generatedAtUTC))} JST / `
+    : "";
+  const modeLine = MODE === "enc" ? "（静的・暗号化データ）" : "（localhost ライブ取得）";
   statusEl.textContent =
-    `参加者 ${DB.participants?.length ?? 0} 名 / データ取得: ${fmtJst(Date.parse(meta.fetchedAtUTC))} JST` +
-    ` / 大会期間: ${fmtJst(Date.parse(meta.competitionStartISO))} 〜 ${fmtJst(Date.parse(meta.competitionEndISO))} JST`;
+    `参加者 ${ROSTER.length} 名 / ${genLine}` +
+    `data.json取得: ${fmtJst(Date.parse(COMP_META.fetchedAtUTC))} JST / ` +
+    `大会期間: ${fmtJst(Date.parse(COMP_META.competitionStartISO))} 〜 ${fmtJst(Date.parse(COMP_META.competitionEndISO))} JST ${modeLine}`;
 
   renderRoster("");
-  marketsMap(); // マーケット名マップを先行取得（失敗しても各表示はIDにフォールバック）
   document.getElementById("admin-search").addEventListener("input", (ev) => {
     renderRoster(ev.target.value);
   });
@@ -216,11 +249,12 @@ async function init() {
   if (/^0x[0-9a-fA-F]{40}$/.test(hashAddr)) selectAddress(hashAddr);
 }
 
+// ---- 参加者リスト（検索） ---------------------------------------------
+
 function filterParticipants(query) {
   const q = query.trim().toLowerCase();
-  const list = DB?.participants ?? [];
-  if (!q) return list;
-  return list.filter((p) =>
+  if (!q) return ROSTER;
+  return ROSTER.filter((p) =>
     (p.displayName ?? "").toLowerCase().includes(q) ||
     (p.xAccount ?? "").toLowerCase().includes(q) ||
     (p.address ?? "").toLowerCase().includes(q)
@@ -245,9 +279,9 @@ function renderRoster(query) {
     </tr>`;
   });
 
-  // 0x アドレス全文が入力されたら、未登録アドレスでも調査できる行を出す
+  // アドホック調査（未登録アドレス）は live モードのみ（enc は静的データに無いため不可）
   const q = query.trim();
-  if (/^0x[0-9a-fA-F]{40}$/.test(q) &&
+  if (MODE === "live" && /^0x[0-9a-fA-F]{40}$/.test(q) &&
       !matches.some((p) => p.address?.toLowerCase() === q.toLowerCase())) {
     rows.push(`<tr class="roster-row" data-addr="${esc(q)}">
       <td colspan="6">🔍 未登録アドレスとして調査: <span class="mono">${esc(q)}</span></td>
@@ -263,34 +297,100 @@ function renderRoster(query) {
   });
 }
 
-// ---- 参加者選択・詳細読み込み -----------------------------------------
+// data.json から該当プロフィールを引く（enc エントリの displayName/xAccount をフォールバック）
+function profileFor(address, encEntry) {
+  const addr = address.toLowerCase();
+  const fromDb = (DB?.participants ?? []).find((p) => p.address?.toLowerCase() === addr);
+  if (fromDb) return fromDb;
+  if (encEntry) return { address, displayName: encEntry.displayName, xAccount: encEntry.xAccount };
+  return null;
+}
+
+// ---- 参加者選択（モード分岐） -----------------------------------------
 
 function selectAddress(address) {
   currentAddr = address.toLowerCase();
-  const token = ++loadSeq;
   location.hash = address;
-  renderRoster(document.getElementById("admin-search").value);
-
-  const participant = (DB?.participants ?? [])
-    .find((p) => p.address?.toLowerCase() === currentAddr) ?? null;
-
+  renderRoster(searchValue());
   document.getElementById("detail-root").style.display = "";
+  document.getElementById("card-profile").scrollIntoView({ behavior: "smooth", block: "start" });
+  if (MODE === "enc") selectEnc(address);
+  else selectLive(address);
+}
+
+// enc モード: 復号済み静的データから同期描画
+function selectEnc(address) {
+  const entry = STATIC?.participants?.[address.toLowerCase()] ?? null;
+  const profile = profileFor(address, entry);
+  renderProfile(profile, address);
+
+  if (!entry) {
+    const msg = '<p class="loading-note">この参加者の調査データが admin_data.enc に含まれていません（生成対象外か、生成時にエラー）。</p>';
+    ["summary", "transfers", "positions", "trades", "leaderboard"].forEach((s) => setContent(`${s}-content`, msg));
+    return;
+  }
+
+  // 各セクションは取得失敗時に <key>Error（文字列）が入る（バックエンド仕様）
+  if (entry.summaryError) {
+    setContent("summary-content", errorHtml(entry.summaryError));
+  } else {
+    renderSummary(entry.summary ?? {}, profile, {
+      periodDeposits: entry.periodDeposits, periodWithdrawals: entry.periodWithdrawals,
+    });
+  }
+
+  if (entry.transfersError) {
+    setContent("transfers-content", errorHtml(entry.transfersError));
+  } else {
+    renderTransfers(entry.transfers ?? [], {
+      periodDeposits: entry.periodDeposits, periodWithdrawals: entry.periodWithdrawals, capped: false,
+    }, false);
+  }
+
+  // positions は portfolio/details 由来（summaryError なら合わせて取得失敗扱い）
+  if (Array.isArray(entry.positions)) {
+    renderPositions(entry.positions.filter((p) => Number(p.size) !== 0));
+  } else if (entry.summaryError) {
+    setContent("positions-content", errorHtml(entry.summaryError));
+  } else {
+    setContent("positions-content", '<p class="loading-note">現在オープン中のポジションはありません。</p>');
+  }
+
+  if (entry.tradesError) {
+    setContent("trades-content", errorHtml(entry.tradesError));
+  } else {
+    renderTrades({
+      recent: entry.recentTrades ?? [], volume: entry.tradeVolume,
+      count: entry.tradeCount, liq: entry.liqCount, capped: entry.tradePagesCapped,
+    });
+  }
+
+  if (entry.leaderboardMeError) {
+    setContent("leaderboard-content", errorHtml(entry.leaderboardMeError));
+  } else {
+    renderLeaderboard(entry.leaderboardMe);
+  }
+}
+
+// live モード: RISEx API からリアルタイム取得（各セクション独立）
+function selectLive(address) {
+  const token = ++loadSeq;
+  const participant = profileFor(address, null);
+
   renderProfile(participant, address);
   setContent("summary-content", loadingHtml("portfolio / transfer-history を取得中..."));
   setContent("transfers-content", loadingHtml("transfer-history を取得中..."));
   setContent("positions-content", loadingHtml("positions を取得中..."));
   setContent("trades-content", loadingHtml("trade-history を取得中...（取引が多い場合は時間がかかります）"));
   setContent("leaderboard-content", loadingHtml("leaderboard/me を取得中..."));
-  document.getElementById("card-profile").scrollIntoView({ behavior: "smooth", block: "start" });
 
-  // 各セクションは独立に取得・描画する（1つの失敗が他を巻き込まない）
   // portfolio/details はサマリとポジションで共用（positions も同梱されている）
   const portfolioPromise = apiGet("/v1/portfolio/details", { account: address });
-  const transfersPromise = loadTransfers(address, token);
-  loadSummary(portfolioPromise, participant, transfersPromise, token);
-  loadPositions(portfolioPromise, token);
-  loadTrades(address, token);
-  loadLeaderboardMe(address, token);
+  const transfersPromise = loadTransfersLive(address, token);
+  loadSummaryLive(portfolioPromise, participant, transfersPromise, token);
+  loadPositionsLive(portfolioPromise, token);
+  loadTradesLive(address, token);
+  loadLeaderboardMeLive(address, token);
 }
 
 // ---- 参加者情報 -------------------------------------------------------
@@ -298,7 +398,7 @@ function selectAddress(address) {
 function renderProfile(p, address) {
   if (!p) {
     setContent("profile-content", `
-      <p class="loading-note">data.json に未登録のアドレスです（エントリー外の可能性）。API情報のみ表示します。</p>
+      <p class="loading-note">data.json に未登録のアドレスです（エントリー外の可能性）。</p>
       <div class="kv-grid">
         <div class="kv-item"><div class="kv-label">アドレス</div><div class="kv-value">${riseAddrLink(address)}</div></div>
       </div>`);
@@ -312,7 +412,7 @@ function renderProfile(p, address) {
       ? `<a class="addr-link" href="https://x.com/${esc(p.xAccount)}" target="_blank" rel="noopener">@${esc(p.xAccount)}</a>`
       : "—"],
     ["Discord", discord ? esc(discord) : '<span class="badge badge--dim">未連携</span>'],
-    ["アドレス", riseAddrLink(p.address)],
+    ["アドレス", riseAddrLink(p.address ?? address)],
     ["入金条件（期間中200 USDC+）", p.minDepositMet
       ? '<span class="badge badge--ok">達成</span>'
       : '<span class="badge badge--warn">未達</span>'],
@@ -331,67 +431,181 @@ function renderProfile(p, address) {
 
 // ---- 資産サマリ -------------------------------------------------------
 
-async function loadSummary(portfolioPromise, participant, transfersPromise, token) {
+function renderSummary(s, participant, { periodDeposits, periodWithdrawals }) {
+  s = s ?? {};
+  const endEquity = Number(pick(s, ["total_account_value"]));
+
+  // data.json selfCheck と同じ式: PnL = (endEquity + withdrawals) - qualifyingCapital
+  const qc = participant?.qualifyingCapital;
+  let pnlHtml = "—";
+  let roiHtml = "—";
+  if (qc != null && isFinite(endEquity) && periodWithdrawals != null) {
+    const pnl = (endEquity + Number(periodWithdrawals)) - qc;
+    pnlHtml = `<span class="${signClass(pnl)}">${fmtUsd(pnl)}</span>`;
+    if (qc > 0) {
+      const roi = (pnl / qc) * 100;
+      roiHtml = `<span class="${signClass(roi)}">${fmtNum(roi)}%</span>`;
+    }
+  }
+
+  const kv = [
+    ["現在の総資産（endEquity）", fmtUsd(endEquity)],
+    ["USDC残高", fmtUsd(pick(s, ["usdc_balance"]))],
+    ["余剰証拠金", fmtUsd(pick(s, ["free_collateral"]))],
+    ["証拠金使用率", fmtRatioPercent(pick(s, ["margin_usage"]))],
+    ["アカウントレバレッジ", pick(s, ["account_leverage"]) != null ? fmtNum(pick(s, ["account_leverage"])) + "x" : "—"],
+    ["建玉総額", fmtUsd(pick(s, ["total_notional"]))],
+    ["未実現PnL合計", `<span class="${signClass(s.total_unrealized_pnl)}">${fmtUsd(s.total_unrealized_pnl)}</span>`],
+    ["実現PnL", `<span class="${signClass(s.realized_pnl)}">${fmtUsd(s.realized_pnl)}</span>`],
+    ["証拠金健全度", fmtRatioPercent(s.margin_health)],
+    ["リスクレベル", s.risk_level
+      ? (s.risk_level === "NORMAL"
+        ? `<span class="badge badge--ok">${esc(s.risk_level)}</span>`
+        : `<span class="badge badge--warn">${esc(s.risk_level)}</span>`)
+      : "—"],
+    ["清算中", s.in_liquidation
+      ? '<span class="badge badge--ng">清算中</span>'
+      : '<span class="badge badge--ok">なし</span>'],
+    ["期間中の入金合計", periodDeposits != null ? fmtUsd(periodDeposits) : "—"],
+    ["期間中の出金合計", periodWithdrawals != null ? fmtUsd(periodWithdrawals) : "—"],
+    ["Qualifying Capital", qc != null ? fmtUsd(qc) : "—（未登録）"],
+    ["PnL（式: endEquity+出金−QC）", pnlHtml],
+    ["ROI（PnL ÷ QC）", roiHtml],
+  ];
+  setContent("summary-content",
+    `<div class="kv-grid">${kv.map(([l, v]) =>
+      `<div class="kv-item"><div class="kv-label">${l}</div><div class="kv-value">${v}</div></div>`).join("")}</div>` +
+    rawDetails("portfolio/details summary", s));
+}
+
+async function loadSummaryLive(portfolioPromise, participant, transfersPromise, token) {
   try {
     const [portfolio, transfers] = await Promise.all([portfolioPromise, transfersPromise]);
     if (token !== loadSeq) return;
-
-    const s = portfolio?.summary ?? {};
-    const endEquity = Number(pick(s, ["total_account_value"]));
-    const periodDeposits = transfers?.periodDeposits ?? null;
-    const periodWithdrawals = transfers?.periodWithdrawals ?? null;
-
-    // data.json selfCheck と同じ式: PnL = (endEquity + withdrawals) - qualifyingCapital
-    const qc = participant?.qualifyingCapital;
-    let pnlHtml = "—";
-    let roiHtml = "—";
-    if (qc != null && isFinite(endEquity) && periodWithdrawals != null) {
-      const pnl = (endEquity + periodWithdrawals) - qc;
-      pnlHtml = `<span class="${signClass(pnl)}">${fmtUsd(pnl)}</span>`;
-      if (qc > 0) {
-        const roi = (pnl / qc) * 100;
-        roiHtml = `<span class="${signClass(roi)}">${fmtNum(roi)}%</span>`;
-      }
-    }
-
-    const kv = [
-      ["現在の総資産（endEquity）", fmtUsd(endEquity)],
-      ["USDC残高", fmtUsd(pick(s, ["usdc_balance"]))],
-      ["余剰証拠金", fmtUsd(pick(s, ["free_collateral"]))],
-      ["証拠金使用率", fmtRatioPercent(pick(s, ["margin_usage"]))],
-      ["アカウントレバレッジ", pick(s, ["account_leverage"]) != null ? fmtNum(pick(s, ["account_leverage"])) + "x" : "—"],
-      ["建玉総額", fmtUsd(pick(s, ["total_notional"]))],
-      ["未実現PnL合計", `<span class="${signClass(s.total_unrealized_pnl)}">${fmtUsd(s.total_unrealized_pnl)}</span>`],
-      ["実現PnL", `<span class="${signClass(s.realized_pnl)}">${fmtUsd(s.realized_pnl)}</span>`],
-      ["証拠金健全度", fmtRatioPercent(s.margin_health)],
-      ["リスクレベル", s.risk_level
-        ? (s.risk_level === "NORMAL"
-          ? `<span class="badge badge--ok">${esc(s.risk_level)}</span>`
-          : `<span class="badge badge--warn">${esc(s.risk_level)}</span>`)
-        : "—"],
-      ["清算中", s.in_liquidation
-        ? '<span class="badge badge--ng">清算中</span>'
-        : '<span class="badge badge--ok">なし</span>'],
-      ["期間中の入金合計", periodDeposits != null ? fmtUsd(periodDeposits) : "—"],
-      ["期間中の出金合計", periodWithdrawals != null ? fmtUsd(periodWithdrawals) : "—"],
-      ["Qualifying Capital", qc != null ? fmtUsd(qc) : "—（未登録）"],
-      ["PnL（式: endEquity+出金−QC）", pnlHtml],
-      ["ROI（PnL ÷ QC）", roiHtml],
-    ];
-    setContent("summary-content",
-      `<div class="kv-grid">${kv.map(([l, v]) =>
-        `<div class="kv-item"><div class="kv-label">${l}</div><div class="kv-value">${v}</div></div>`).join("")}</div>` +
-      `<p class="section-sub" style="margin-top:10px;">※ data.json 側の集計値（selfCheck）はスナップショット時点、ここはリアルタイム値です。</p>` +
-      rawDetails("portfolio/details", portfolio));
+    renderSummary(portfolio?.summary ?? {}, participant, {
+      periodDeposits: transfers?.periodDeposits, periodWithdrawals: transfers?.periodWithdrawals,
+    });
   } catch (err) {
-    if (token !== loadSeq) return;
-    setContent("summary-content", errorHtml(err));
+    if (token === loadSeq) setContent("summary-content", errorHtml(err));
   }
 }
 
 // ---- 入出金履歴 -------------------------------------------------------
 
-async function loadTransfers(address, token) {
+function renderTransfers(items, { periodDeposits, periodWithdrawals, capped }, live) {
+  if (!items.length) {
+    setContent("transfers-content", '<p class="loading-note">入出金の記録がありません。</p>');
+    return;
+  }
+  const rows = items.map((it, i) => {
+    const ms = toMs(it.block_time);
+    const inPeriod = inCompetitionPeriod(ms);
+    const isWithdraw = it.type === "WITHDRAW";
+    const typeBadge = isWithdraw
+      ? '<span class="badge badge--warn">出金</span>'
+      : '<span class="badge badge--ok">入金</span>';
+    let traceCell;
+    if (!isWithdraw) {
+      traceCell = "—";
+    } else if (live) {
+      traceCell = `<span id="wd-trace-${i}" class="loading-note">⏳ 追跡中...</span>`;
+    } else {
+      // enc モード: 焼き込み済み trace を表示
+      traceCell = formatTrace(it.trace, it);
+    }
+    return `<tr class="${inPeriod ? "" : "row-out-of-period"}">
+      <td>${fmtJst(ms)}${inPeriod ? "" : " <span class=\"badge badge--dim\">期間外</span>"}</td>
+      <td>${typeBadge}</td>
+      <td style="text-align:right;">${fmtUsd(it.amount)}</td>
+      <td>${it.transaction_hash ? riseTxLink(it.transaction_hash) : "—"}</td>
+      <td class="trace-cell">${traceCell}</td>
+    </tr>`;
+  });
+
+  setContent("transfers-content", `
+    <div class="kv-grid" style="margin-bottom: 14px;">
+      <div class="kv-item"><div class="kv-label">期間中の入金合計</div><div class="kv-value">${fmtUsd(periodDeposits)}</div></div>
+      <div class="kv-item"><div class="kv-label">期間中の出金合計</div><div class="kv-value">${fmtUsd(periodWithdrawals)}</div></div>
+      <div class="kv-item"><div class="kv-label">総レコード数</div><div class="kv-value">${items.length}${capped ? "（上限打ち切り）" : ""}</div></div>
+    </div>
+    <div class="table-responsive">
+      <table class="leaderboard-table">
+        <thead><tr>
+          <th>日時（JST）</th><th>種別</th><th>金額</th><th>RISE tx</th><th>出金先 / 着金状況</th>
+        </tr></thead>
+        <tbody>${rows.join("")}</tbody>
+      </table>
+    </div>`);
+
+  // live モードのみ、出金行を順番にライブ追跡（外部APIへの負荷を抑えるため直列）
+  if (live) {
+    const token = loadSeq;
+    (async () => {
+      for (let i = 0; i < items.length; i++) {
+        if (token !== loadSeq) return;
+        if (items[i].type !== "WITHDRAW" || !items[i].transaction_hash) continue;
+        await traceWithdrawal(items[i], `wd-trace-${i}`, token);
+      }
+    })();
+  }
+}
+
+// trace オブジェクト → 表示HTML（live計算・enc焼き込みの両方で共用）
+// trace 形: { internal?, dstEid, dstChainName?, dstAddress, arriveAmount, fee,
+//             status, dstTxHash, arriveTimeMs }
+function formatTrace(trace, item) {
+  const lzLink = item?.transaction_hash
+    ? ` <a class="addr-link" href="https://layerzeroscan.com/tx/${esc(item.transaction_hash)}" target="_blank" rel="noopener" style="font-size:0.72rem;">LZ Scan</a>`
+    : "";
+
+  if (!trace) return '<span class="badge badge--dim">未追跡</span>';
+
+  // (b) RISEチェーン内の vault 預け替え（internal フラグ or status "INTERNAL"）
+  if (trace.internal || trace.status === "INTERNAL") {
+    return `<span class="badge badge--dim">チェーン内移動</span> ${esc(trace.dstChainName ?? "RISE Chain内 (vault預け替え)")}`;
+  }
+
+  // 照会自体が失敗（バックエンドのトレース例外）
+  if (trace.status === "TRACE_ERROR") {
+    return '<span class="badge badge--dim">追跡失敗（再試行待ち）</span>' + lzLink;
+  }
+
+  const status = trace.status ?? "UNKNOWN";
+  const chain = LZ_EID_CHAINS[Number(trace.dstEid)];
+  const chainName = trace.dstChainName ?? chain?.name ?? (trace.dstEid != null ? `EID ${trace.dstEid}` : null);
+
+  // (c) イベント未検出（宛先情報が全く無い）
+  if (chainName == null && trace.dstAddress == null && status === "UNKNOWN") {
+    return '<span class="badge badge--dim">イベント未検出/不明</span>' + lzLink;
+  }
+
+  const dstAddress = trace.dstAddress ? normalizeAddr(trace.dstAddress) : null;
+  let html = `→ ${esc(chainName ?? "不明")} / ${dstAddress ? `<span class="mono">${esc(shortAddr(dstAddress))}</span>` : "—"}<br>`;
+  if (trace.arriveAmount != null) {
+    html += `着金額 ${fmtUsd(trace.arriveAmount)}` +
+      (trace.fee != null ? `（手数料 ${fmtNum(trace.fee)} USDC控除後）` : "") + "<br>";
+  }
+
+  const arriveMs = trace.arriveTimeMs != null ? toMs(trace.arriveTimeMs) : null;
+  if (status === "SUCCEEDED" || status === "DELIVERED") {
+    html += `<span class="badge badge--ok">✅ 着金済み</span> ${arriveMs != null ? esc(fmtJst(arriveMs)) : ""}`;
+    if (trace.dstTxHash && chain?.txUrl) {
+      html += ` <a class="addr-link mono" href="${chain.txUrl}${esc(trace.dstTxHash)}" target="_blank" rel="noopener">着金tx</a>`;
+    } else if (trace.dstTxHash) {
+      html += ` <span class="mono">${esc(shortAddr(trace.dstTxHash))}</span>`;
+    }
+  } else if (status === "FAILED" || status === "BLOCKED") {
+    html += `<span class="badge badge--ng">⚠ ${esc(status)}</span>`;
+  } else if (status === "UNKNOWN") {
+    html += `<span class="badge badge--dim">状況不明</span>`;
+  } else {
+    // 未着金 = ブリッジ中（所要時間は数秒〜数時間とばらつく）
+    html += `<span class="badge badge--warn">🔄 ブリッジ中（${esc(status)}）</span>`;
+  }
+  return html + lzLink;
+}
+
+async function loadTransfersLive(address, token) {
   try {
     const items = [];
     let page = 1;
@@ -418,7 +632,7 @@ async function loadTransfers(address, token) {
       else if (it.type === "WITHDRAW") periodWithdrawals += amount;
     }
 
-    renderTransfers(items, { periodDeposits, periodWithdrawals, capped }, token);
+    renderTransfers(items, { periodDeposits, periodWithdrawals, capped }, true);
     return { items, periodDeposits, periodWithdrawals };
   } catch (err) {
     if (token === loadSeq) setContent("transfers-content", errorHtml(err));
@@ -426,56 +640,7 @@ async function loadTransfers(address, token) {
   }
 }
 
-function renderTransfers(items, { periodDeposits, periodWithdrawals, capped }, token) {
-  if (!items.length) {
-    setContent("transfers-content", '<p class="loading-note">入出金の記録がありません。</p>');
-    return;
-  }
-  const rows = items.map((it, i) => {
-    const ms = toMs(it.block_time);
-    const inPeriod = inCompetitionPeriod(ms);
-    const isWithdraw = it.type === "WITHDRAW";
-    const typeBadge = isWithdraw
-      ? '<span class="badge badge--warn">出金</span>'
-      : '<span class="badge badge--ok">入金</span>';
-    const trace = isWithdraw
-      ? `<span id="wd-trace-${i}" class="loading-note">⏳ 追跡中...</span>`
-      : "—";
-    return `<tr class="${inPeriod ? "" : "row-out-of-period"}">
-      <td>${fmtJst(ms)}${inPeriod ? "" : " <span class=\"badge badge--dim\">期間外</span>"}</td>
-      <td>${typeBadge}</td>
-      <td style="text-align:right;">${fmtUsd(it.amount)}</td>
-      <td>${it.transaction_hash ? riseTxLink(it.transaction_hash) : "—"}</td>
-      <td class="trace-cell">${trace}</td>
-    </tr>`;
-  });
-
-  setContent("transfers-content", `
-    <div class="kv-grid" style="margin-bottom: 14px;">
-      <div class="kv-item"><div class="kv-label">期間中の入金合計</div><div class="kv-value">${fmtUsd(periodDeposits)}</div></div>
-      <div class="kv-item"><div class="kv-label">期間中の出金合計</div><div class="kv-value">${fmtUsd(periodWithdrawals)}</div></div>
-      <div class="kv-item"><div class="kv-label">総レコード数</div><div class="kv-value">${items.length}${capped ? "（上限打ち切り）" : ""}</div></div>
-    </div>
-    <div class="table-responsive">
-      <table class="leaderboard-table">
-        <thead><tr>
-          <th>日時（JST）</th><th>種別</th><th>金額</th><th>RISE tx</th><th>出金先 / 着金状況</th>
-        </tr></thead>
-        <tbody>${rows.join("")}</tbody>
-      </table>
-    </div>`);
-
-  // 出金行を順番にトレース（explorer / LayerZero Scan への負荷を抑えるため直列）
-  (async () => {
-    for (let i = 0; i < items.length; i++) {
-      if (token !== loadSeq) return;
-      if (items[i].type !== "WITHDRAW" || !items[i].transaction_hash) continue;
-      await traceWithdrawal(items[i], `wd-trace-${i}`, token);
-    }
-  })();
-}
-
-// 出金tx → WithdrawalProcessed/OFTSent イベント → LayerZero Scan で着金確認
+// live: 出金tx → Blockscout logs → LayerZero Scan で着金確認し trace を組み立てる
 async function traceWithdrawal(item, cellId, token) {
   const setCell = (html) => {
     if (token !== loadSeq) return;
@@ -490,53 +655,39 @@ async function traceWithdrawal(item, cellId, token) {
     const param = (d, name) => d?.parameters?.find((p) => p.name === name)?.value;
 
     const wp = findEvent("WithdrawalProcessed");
-    const oft = findEvent("OFTSent");
-    if (!wp) { setCell('<span class="badge badge--dim">イベント未検出</span>'); return; }
-
-    const dstAddress = normalizeAddr(param(wp, "dstAddress"));
-    const dstEid = Number(param(wp, "dstEid"));
-    const chain = LZ_EID_CHAINS[dstEid];
-    const chainName = chain?.name ?? (isFinite(dstEid) ? `EID ${dstEid}` : "不明");
-
-    // イベントの amount / fee は USDC 6 decimals の生値。取れなければ一律1 USDCで概算
-    const evAmount = Number(param(wp, "amount"));
-    const evFee = Number(param(wp, "fee"));
-    const hasEventAmounts = isFinite(evAmount) && evAmount > 0 && isFinite(evFee);
-    const arriveAmount = hasEventAmounts
-      ? (evAmount - evFee) / 1e6
-      : Number(item.amount) - WITHDRAW_FEE_USDC;
-    const feeUsdc = hasEventAmounts ? evFee / 1e6 : WITHDRAW_FEE_USDC;
-
-    let html = `→ ${chainName} / ${dstAddress ? `<span class="mono">${esc(shortAddr(dstAddress))}</span>` : "—"}<br>` +
-      `着金額 ${fmtUsd(arriveAmount)}（手数料 ${fmtNum(feeUsdc)} USDC控除後）<br>`;
-
-    const guid = param(oft, "guid");
-    if (!guid) {
-      setCell(html + '<span class="badge badge--dim">GUID未検出（LZ照会不可）</span>');
+    if (!wp) {
+      // (b) vault 預け替え: DepositRequested があれば内部移動
+      if (findEvent("DepositRequested")) {
+        setCell(formatTrace({ internal: true, dstChainName: "RISE Chain内 (vault預け替え)" }, item));
+      } else {
+        setCell(formatTrace({ status: "UNKNOWN" }, item));
+      }
       return;
     }
 
-    const lz = await fetchJson(`${LZ_SCAN_BASE}/v1/messages/guid/${guid}`);
-    const msg = Array.isArray(lz?.data) ? lz.data[0] : null;
-    const status = msg?.destination?.status ?? "UNKNOWN";
-    const dstTxHash = msg?.destination?.tx?.txHash;
-    const arriveMs = toMs(msg?.destination?.tx?.blockTimestamp ?? msg?.destination?.blockTimestamp);
+    const oft = findEvent("OFTSent");
+    const evAmount = Number(param(wp, "amount"));
+    const evFee = Number(param(wp, "fee"));
+    const hasEv = isFinite(evAmount) && evAmount > 0 && isFinite(evFee);
+    const trace = {
+      dstEid: Number(param(wp, "dstEid")),
+      dstAddress: normalizeAddr(param(wp, "dstAddress")),
+      arriveAmount: hasEv ? (evAmount - evFee) / 1e6 : Number(item.amount) - WITHDRAW_FEE_USDC,
+      fee: hasEv ? evFee / 1e6 : WITHDRAW_FEE_USDC,
+      status: "UNKNOWN",
+    };
 
-    if (status === "SUCCEEDED" || status === "DELIVERED") {
-      html += `<span class="badge badge--ok">✅ 着金済み</span> ${arriveMs != null ? esc(fmtJst(arriveMs)) : ""}`;
-      if (dstTxHash && chain?.txUrl) {
-        html += ` <a class="addr-link mono" href="${chain.txUrl}${esc(dstTxHash)}" target="_blank" rel="noopener">着金tx</a>`;
-      } else if (dstTxHash) {
-        html += ` <span class="mono">${esc(shortAddr(dstTxHash))}</span>`;
-      }
-    } else if (status === "FAILED" || status === "BLOCKED") {
-      html += `<span class="badge badge--ng">⚠ ${esc(status)}</span>`;
-    } else {
-      // 未着金 = ブリッジ中（所要時間は数秒〜数時間とばらつく）
-      html += `<span class="badge badge--warn">🔄 ブリッジ中（${esc(status)}）</span>`;
+    const guid = param(oft, "guid");
+    if (guid) {
+      try {
+        const lz = await fetchJson(`${LZ_SCAN_BASE}/v1/messages/guid/${guid}`);
+        const msg = Array.isArray(lz?.data) ? lz.data[0] : null;
+        trace.status = msg?.destination?.status ?? "UNKNOWN";
+        trace.dstTxHash = msg?.destination?.tx?.txHash;
+        trace.arriveTimeMs = toMs(msg?.destination?.tx?.blockTimestamp ?? msg?.destination?.blockTimestamp);
+      } catch { /* LZ照会失敗は status UNKNOWN のまま */ }
     }
-    html += ` <a class="addr-link" href="https://layerzeroscan.com/tx/${esc(item.transaction_hash)}" target="_blank" rel="noopener" style="font-size:0.72rem;">LZ Scan</a>`;
-    setCell(html);
+    setCell(formatTrace(trace, item));
   } catch (err) {
     setCell(`<span class="badge badge--dim">追跡失敗</span> <span class="loading-note">${esc(err.message)}</span>`);
   }
@@ -546,42 +697,41 @@ async function traceWithdrawal(item, cellId, token) {
 
 // /v1/positions は1e18固定小数の生値のため使わず、portfolio/details 同梱の
 // positions（人間単位・mark_price / unrealized_pnl / liquidation_price 込み）を使う
-async function loadPositions(portfolioPromise, token) {
+function renderPositions(positions) {
+  if (!positions.length) {
+    setContent("positions-content", '<p class="loading-note">現在オープン中のポジションはありません。</p>');
+    return;
+  }
+  const rows = positions.map((p) => {
+    // side は数値（0=LONG を実測確認済み。それ以外はSHORT扱い、詳細は生JSON参照）
+    const side = p.side != null ? (Number(p.side) === 0 ? "LONG" : "SHORT") : "—";
+    return `<tr>
+      <td>${esc(marketLabel(p.market_id, p.market_name))}</td>
+      <td>${esc(side)}</td>
+      <td style="text-align:right;">${fmtNum(p.size, 6)}</td>
+      <td style="text-align:right;">${fmtUsd(p.avg_entry_price)}</td>
+      <td style="text-align:right;">${fmtUsd(p.mark_price)}</td>
+      <td style="text-align:right;" class="${signClass(p.unrealized_pnl)}">${fmtUsd(p.unrealized_pnl)}</td>
+      <td style="text-align:right;">${fmtUsd(p.liquidation_price)}</td>
+      <td style="text-align:right;">${fmtNum(p.leverage)}x</td>
+    </tr>`;
+  });
+  setContent("positions-content", `
+    <div class="table-responsive">
+      <table class="leaderboard-table">
+        <thead><tr>
+          <th>Market</th><th>Side</th><th>Size</th><th>Entry</th><th>Mark</th><th>uPnL</th><th>清算価格</th><th>Leverage</th>
+        </tr></thead>
+        <tbody>${rows.join("")}</tbody>
+      </table>
+    </div>` + rawDetails("オープン中ポジション", positions));
+}
+
+async function loadPositionsLive(portfolioPromise, token) {
   try {
     const data = await portfolioPromise;
     if (token !== loadSeq) return;
-    // 全マーケット分（フラット含む）が返るため、建玉があるものだけに絞る
-    const positions = (data?.positions ?? []).filter((p) => Number(p.size) !== 0);
-    if (!positions.length) {
-      setContent("positions-content",
-        '<p class="loading-note">現在オープン中のポジションはありません。</p>');
-      return;
-    }
-    const rows = positions.map((p) => {
-      // side は数値（0=LONG を実測確認済み。それ以外はSHORT扱い、詳細は生JSON参照）
-      const side = p.side != null
-        ? (Number(p.side) === 0 ? "LONG" : "SHORT")
-        : "—";
-      return `<tr>
-        <td>${esc(marketLabel(p.market_id, p.market_name))}</td>
-        <td>${esc(side)}</td>
-        <td style="text-align:right;">${fmtNum(p.size, 6)}</td>
-        <td style="text-align:right;">${fmtUsd(p.avg_entry_price)}</td>
-        <td style="text-align:right;">${fmtUsd(p.mark_price)}</td>
-        <td style="text-align:right;" class="${signClass(p.unrealized_pnl)}">${fmtUsd(p.unrealized_pnl)}</td>
-        <td style="text-align:right;">${fmtUsd(p.liquidation_price)}</td>
-        <td style="text-align:right;">${fmtNum(p.leverage)}x</td>
-      </tr>`;
-    });
-    setContent("positions-content", `
-      <div class="table-responsive">
-        <table class="leaderboard-table">
-          <thead><tr>
-            <th>Market</th><th>Side</th><th>Size</th><th>Entry</th><th>Mark</th><th>uPnL</th><th>清算価格</th><th>Leverage</th>
-          </tr></thead>
-          <tbody>${rows.join("")}</tbody>
-        </table>
-      </div>` + rawDetails("オープン中ポジション（portfolio/details より）", positions));
+    renderPositions((data?.positions ?? []).filter((p) => Number(p.size) !== 0));
   } catch (err) {
     if (token === loadSeq) setContent("positions-content", errorHtml(err));
   }
@@ -589,7 +739,51 @@ async function loadPositions(portfolioPromise, token) {
 
 // ---- 取引履歴 ---------------------------------------------------------
 
-async function loadTrades(address, token) {
+function tradeMs(t) {
+  return toMs(pick(t, ["time", "timestamp", "created_at"]));
+}
+
+function renderTrades({ recent, volume, count, liq, capped }) {
+  const sorted = [...(recent ?? [])].sort((a, b) => (tradeMs(b) ?? 0) - (tradeMs(a) ?? 0));
+  const shown = sorted.slice(0, RECENT_TRADES_SHOWN);
+  const hasTrades = (count ?? shown.length) > 0;
+
+  const rows = shown.map((t) => {
+    const notional = Number(t.price) * Number(t.size);
+    const txHash = t.blockchain_data?.tx_hash ?? t.tx_hash;
+    return `<tr>
+      <td>${fmtJst(tradeMs(t))}</td>
+      <td>${esc(marketLabel(t.market_id, t.market))}</td>
+      <td>${esc(t.side ?? "—")}</td>
+      <td style="text-align:right;">${fmtNum(t.price, 6)}</td>
+      <td style="text-align:right;">${fmtNum(t.size, 6)}</td>
+      <td style="text-align:right;">${fmtUsd(notional)}</td>
+      <td style="text-align:right;" class="${signClass(t.realized_pnl)}">${fmtUsd(t.realized_pnl)}</td>
+      <td>${txHash ? riseTxLink(txHash) : "—"}</td>
+      <td>${t.is_liquidation ? '<span class="badge badge--ng">清算</span>' : ""}</td>
+    </tr>`;
+  });
+
+  setContent("trades-content", `
+    <div class="kv-grid" style="margin-bottom: 14px;">
+      <div class="kv-item"><div class="kv-label">期間中出来高（清算除外）</div><div class="kv-value">${fmtUsd(volume, 0)}</div></div>
+      <div class="kv-item"><div class="kv-label">約定件数</div><div class="kv-value">${(count ?? shown.length).toLocaleString()}${capped ? "（上限打ち切り）" : ""}</div></div>
+      <div class="kv-item"><div class="kv-label">うち清算約定</div><div class="kv-value">${(liq ?? 0).toLocaleString()}</div></div>
+    </div>
+    ${hasTrades ? `
+    <p class="section-sub">直近 ${shown.length} 件を表示</p>
+    <div class="table-responsive">
+      <table class="leaderboard-table">
+        <thead><tr>
+          <th>日時（JST）</th><th>Market</th><th>Side</th><th>Price</th><th>Size</th><th>金額</th><th>実現PnL</th><th>tx</th><th></th>
+        </tr></thead>
+        <tbody>${rows.join("")}</tbody>
+      </table>
+    </div>` : '<p class="loading-note">大会期間中の取引はありません。</p>'}
+    ${shown.length ? rawDetails(`直近${shown.length}件`, shown) : ""}`);
+}
+
+async function loadTradesLive(address, token) {
   try {
     const { startNs, endNs } = competitionRangeNs();
     const trades = [];
@@ -604,56 +798,18 @@ async function loadTrades(address, token) {
       if (!d?.has_next_page) break;
       if (++page > MAX_PAGES) { capped = true; break; }
     }
-    await marketsMap(); // market_id → シンボル変換用
+    await marketsMap();
     if (token !== loadSeq) return;
 
     // 期間中出来高（price × size、清算約定は INCLUDE_LIQUIDATIONS=false に合わせ除外）
     let volume = 0;
-    let liqCount = 0;
+    let liq = 0;
     for (const t of trades) {
-      if (t.is_liquidation) { liqCount++; if (!INCLUDE_LIQUIDATIONS) continue; }
+      if (t.is_liquidation) { liq++; if (!INCLUDE_LIQUIDATIONS) continue; }
       const v = Number(t.price) * Number(t.size);
       if (isFinite(v)) volume += v;
     }
-
-    // time はナノ秒string（timestamp/block_time は存在しない、実スキーマ確認済み）
-    const tradeMs = (t) => toMs(pick(t, ["time", "timestamp", "created_at"]));
-    const sorted = [...trades].sort((a, b) => (tradeMs(b) ?? 0) - (tradeMs(a) ?? 0));
-    const recent = sorted.slice(0, RECENT_TRADES_SHOWN);
-
-    const rows = recent.map((t) => {
-      const notional = Number(t.price) * Number(t.size);
-      const txHash = t.blockchain_data?.tx_hash;
-      return `<tr>
-        <td>${fmtJst(tradeMs(t))}</td>
-        <td>${esc(marketLabel(t.market_id, t.market))}</td>
-        <td>${esc(t.side ?? "—")}</td>
-        <td style="text-align:right;">${fmtNum(t.price, 6)}</td>
-        <td style="text-align:right;">${fmtNum(t.size, 6)}</td>
-        <td style="text-align:right;">${fmtUsd(notional)}</td>
-        <td style="text-align:right;" class="${signClass(t.realized_pnl)}">${fmtUsd(t.realized_pnl)}</td>
-        <td>${txHash ? riseTxLink(txHash) : "—"}</td>
-        <td>${t.is_liquidation ? '<span class="badge badge--ng">清算</span>' : ""}</td>
-      </tr>`;
-    });
-
-    setContent("trades-content", `
-      <div class="kv-grid" style="margin-bottom: 14px;">
-        <div class="kv-item"><div class="kv-label">期間中出来高（清算除外）</div><div class="kv-value">${fmtUsd(volume, 0)}</div></div>
-        <div class="kv-item"><div class="kv-label">約定件数</div><div class="kv-value">${trades.length.toLocaleString()}${capped ? "（上限打ち切り）" : ""}</div></div>
-        <div class="kv-item"><div class="kv-label">うち清算約定</div><div class="kv-value">${liqCount.toLocaleString()}</div></div>
-      </div>
-      ${trades.length ? `
-      <p class="section-sub">直近 ${recent.length} 件を表示</p>
-      <div class="table-responsive">
-        <table class="leaderboard-table">
-          <thead><tr>
-            <th>日時（JST）</th><th>Market</th><th>Side</th><th>Price</th><th>Size</th><th>金額</th><th>実現PnL</th><th>tx</th><th></th>
-          </tr></thead>
-          <tbody>${rows.join("")}</tbody>
-        </table>
-      </div>` : '<p class="loading-note">大会期間中の取引はありません。</p>'}
-      ${recent.length ? rawDetails(`直近${recent.length}件`, recent) : ""}`);
+    renderTrades({ recent: trades, volume, count: trades.length, liq, capped });
   } catch (err) {
     if (token === loadSeq) setContent("trades-content", errorHtml(err));
   }
@@ -661,21 +817,53 @@ async function loadTrades(address, token) {
 
 // ---- 公式リーダーボード -----------------------------------------------
 
-async function loadLeaderboardMe(address, token) {
+function renderLeaderboard(data) {
+  if (data == null) {
+    setContent("leaderboard-content", '<p class="loading-note">リーダーボード情報がありません。</p>');
+    return;
+  }
+  setContent("leaderboard-content",
+    '<p class="section-sub">公式API（slug: bbdao）の本人ステータスです。</p>' +
+    rawDetails("leaderboard/me", data));
+}
+
+async function loadLeaderboardMeLive(address, token) {
   try {
     const data = await apiGet(`/v1/competitions/${COMPETITION_SLUG}/leaderboard/me`, { wallet: address });
     if (token !== loadSeq) return;
-    setContent("leaderboard-content",
-      '<p class="section-sub">公式API（slug: bbdao）の本人ステータスです。</p>' +
-      rawDetails("leaderboard/me", data));
+    renderLeaderboard(data);
   } catch (err) {
     if (token === loadSeq) setContent("leaderboard-content", errorHtml(err));
   }
 }
 
-// ---- 簡易ログインロック -----------------------------------------------
-// クライアントサイドのみの抑止用ロック（ソース閲覧で突破可能）。
-// 認証情報は平文で置かず、"user:pass" の SHA-256 ハッシュで照合する。
+// ---- 復号（enc モード） -----------------------------------------------
+// admin_data.enc 形式: {v,kdf,iter,salt(b64),iv(b64:12B),ct(b64:暗号文+16B GCMタグ)}
+// 平文は UTF-8 の JSON 文字列、AAD 無し、PBKDF2-HMAC-SHA256 → AES-256-GCM。
+
+function b64ToBytes(b64) {
+  const bin = atob(b64);
+  const bytes = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+  return bytes;
+}
+
+async function decryptEnc(encObj, passphrase) {
+  const salt = b64ToBytes(encObj.salt);
+  const iv = b64ToBytes(encObj.iv);
+  const ct = b64ToBytes(encObj.ct);
+  const baseKey = await crypto.subtle.importKey(
+    "raw", new TextEncoder().encode(passphrase), "PBKDF2", false, ["deriveKey"]);
+  const key = await crypto.subtle.deriveKey(
+    { name: "PBKDF2", salt, iterations: encObj.iter ?? 600000, hash: "SHA-256" },
+    baseKey, { name: "AES-GCM", length: 256 }, false, ["decrypt"]);
+  const ptBuf = await crypto.subtle.decrypt({ name: "AES-GCM", iv }, key, ct);
+  return JSON.parse(new TextDecoder().decode(ptBuf));
+}
+
+// ---- 認証／ロック -----------------------------------------------------
+// live モード: 簡易ユーザー名/パスワード（"user:pass" の SHA-256 照合）
+// enc モード : 復号パスフレーズ（復号成功＝認証成功。ハッシュ照合は行わない）
 
 const LOCK_HASH = "051a76ca995eedd7c1c784cb3ed7231f88172aedea088f01d558b212a4d756f7";
 const LOCK_STORAGE_KEY = "risexAdminUnlocked";
@@ -688,42 +876,72 @@ async function sha256Hex(text) {
 function unlockAndStart() {
   document.getElementById("lock-overlay").style.display = "none";
   document.getElementById("admin-container").style.display = "";
-  init();
+  startApp();
+}
+
+function showLockError(msg) {
+  const el = document.getElementById("lock-error");
+  el.textContent = msg;
+  el.style.display = "";
 }
 
 function setupLock() {
-  // 同一タブ内は再入力不要（タブを閉じるとロックに戻る）
-  let stored = null;
-  try { stored = sessionStorage.getItem(LOCK_STORAGE_KEY); } catch { /* 私的モード等では毎回入力 */ }
-  if (stored === LOCK_HASH) {
-    unlockAndStart();
-    return;
+  const form = document.getElementById("lock-form");
+  const userEl = document.getElementById("lock-user");
+  const passEl = document.getElementById("lock-pass");
+
+  if (MODE === "enc") {
+    // パスフレーズ1本の入力に切り替える
+    userEl.style.display = "none";
+    passEl.placeholder = "復号パスフレーズ";
+    const note = document.querySelector(".lock-note");
+    if (note) note.textContent = "運営用の内部ページです。データの復号パスフレーズを入力してください。";
+  } else {
+    // live: 同一タブ内は再入力不要
+    let stored = null;
+    try { stored = sessionStorage.getItem(LOCK_STORAGE_KEY); } catch { /* 私的モード等 */ }
+    if (stored === LOCK_HASH) { unlockAndStart(); return; }
   }
 
-  const form = document.getElementById("lock-form");
-  const errorEl = document.getElementById("lock-error");
   form.addEventListener("submit", async (ev) => {
     ev.preventDefault();
-    errorEl.style.display = "none";
+    document.getElementById("lock-error").style.display = "none";
     if (!crypto?.subtle) {
-      errorEl.textContent = "この環境では認証を利用できません。HTTPS（またはlocalhost）で開いてください。";
-      errorEl.style.display = "";
+      showLockError("この環境では認証を利用できません。HTTPS（またはlocalhost）で開いてください。");
       return;
     }
-    const user = document.getElementById("lock-user").value.trim();
-    const pass = document.getElementById("lock-pass").value;
-    const hash = await sha256Hex(`${user}:${pass}`);
-    if (hash === LOCK_HASH) {
-      try { sessionStorage.setItem(LOCK_STORAGE_KEY, hash); } catch { /* 保存不可でも続行 */ }
-      unlockAndStart();
+
+    if (MODE === "enc") {
+      const btn = form.querySelector("button");
+      const orig = btn.textContent;
+      btn.disabled = true; btn.textContent = "復号中...";
+      try {
+        const encObj = await fetchJson(`${ENC_FILE}?t=${Date.now()}`);
+        STATIC = await decryptEnc(encObj, passEl.value);
+        unlockAndStart();
+      } catch (err) {
+        // 復号失敗（パスフレーズ違い）とファイル取得失敗を区別
+        const isFetch = /HTTP \d+/.test(err.message || "");
+        showLockError(isFetch
+          ? `調査データ(${ENC_FILE})を取得できませんでした: ${err.message}`
+          : "パスフレーズが違うか、データを復号できませんでした。");
+        passEl.value = ""; passEl.focus();
+      } finally {
+        btn.disabled = false; btn.textContent = orig;
+      }
     } else {
-      errorEl.textContent = "ユーザー名またはパスワードが違います。";
-      errorEl.style.display = "";
-      document.getElementById("lock-pass").value = "";
-      document.getElementById("lock-pass").focus();
+      const hash = await sha256Hex(`${userEl.value.trim()}:${passEl.value}`);
+      if (hash === LOCK_HASH) {
+        try { sessionStorage.setItem(LOCK_STORAGE_KEY, hash); } catch { /* 保存不可でも続行 */ }
+        unlockAndStart();
+      } else {
+        showLockError("ユーザー名またはパスワードが違います。");
+        passEl.value = ""; passEl.focus();
+      }
     }
   });
-  document.getElementById("lock-user").focus();
+
+  (MODE === "enc" ? passEl : userEl).focus();
 }
 
 // ---- 起動 -------------------------------------------------------------

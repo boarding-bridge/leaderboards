@@ -211,16 +211,18 @@
       <span class="admin-badge">INTERNAL / 運営用</span>
     </div>
     <p class="admin-note">
-      問い合わせ対応用の内部ツールです。参加者名・X ID・アドレスで検索すると、RISEx
-      の公開APIから資産状況・入出金（出金は着金状況まで追跡）・ポジション・取引履歴を取得して表示します。
+      問い合わせ対応用の内部ツールです。参加者名・X ID・アドレスで検索すると、資産状況・入出金
+      （出金は着金状況まで追跡）・ポジション・取引履歴を表示します。データは運営バックエンドが
+      定期取得・暗号化したスナップショットです（localhost で開いた場合は RISEx API をリアルタイム直接取得）。
       このページのURLは参加者へ共有しないでください。
     </p>
+    <p id="api-warning" class="error-note" style="display: none; margin-bottom: 16px;"></p>
 
     <!-- 検索・参加者リスト -->
     <div class="dashboard-card">
       <h2 class="section-title">参加者検索</h2>
       <input type="text" id="admin-search" class="admin-search" autocomplete="off" spellcheck="false"
-             placeholder="参加者名 / X ID / アドレス で絞り込み（0x... 全文入力で未登録アドレスも調査可）">
+             placeholder="参加者名 / X ID / アドレス で絞り込み">
       <p id="roster-status" class="loading-note" style="margin-top: 10px;">data.json を読み込んでいます...</p>
       <div class="table-responsive" style="margin-top: 8px;">
         <table class="leaderboard-table">
@@ -278,6 +280,6 @@
     </footer>
   </div>
 
-  <script src="admin.js?v=3"></script>
+  <script src="admin.js?v=6"></script>
 </body>
 </html>
