@@ -220,10 +220,19 @@
 
     <!-- 検索・参加者リスト -->
     <div class="dashboard-card">
-      <h2 class="section-title">参加者検索</h2>
+      <div style="display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap;">
+        <h2 class="section-title" style="margin:0;">参加者検索</h2>
+        <button type="button" id="refresh-btn" class="refresh-btn">🔄 データ更新</button>
+      </div>
       <input type="text" id="admin-search" class="admin-search" autocomplete="off" spellcheck="false"
-             placeholder="参加者名 / X ID / アドレス で絞り込み">
+             placeholder="参加者名 / X ID / アドレス で絞り込み" style="margin-top: 10px;">
       <p id="roster-status" class="loading-note" style="margin-top: 10px;">data.json を読み込んでいます...</p>
+      <div class="sort-tabs" id="roster-sort" style="margin-top: 4px;">
+        <span class="sort-tabs-label">並び替え:</span>
+        <button type="button" class="sort-tab sort-tab--active" data-sort="default">参加者順</button>
+        <button type="button" class="sort-tab" data-sort="roi">ROI順位</button>
+        <button type="button" class="sort-tab" data-sort="volume">Vol順位</button>
+      </div>
       <div class="table-responsive" style="margin-top: 8px;">
         <table class="leaderboard-table">
           <thead>
@@ -239,6 +248,7 @@
           <tbody id="roster-body"></tbody>
         </table>
       </div>
+      <div class="page-tabs" id="roster-pager" style="margin-top: 12px;"></div>
     </div>
 
     <!-- 選択した参加者の詳細 -->

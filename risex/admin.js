@@ -46,6 +46,11 @@ let STATIC = null;      // enc モードで復号した admin_data.json
 let MARKETS = null;     // market_id → シンボル
 let currentAddr = null; // 表示中のアドレス（小文字）
 let loadSeq = 0;        // 古い非同期レスポンスの描画を防ぐトークン（live モード）
+let PASSPHRASE = null;  // enc モードの復号パスフレーズ（メモリのみ・データ更新に再利用）
+let rosterPage = 0;     // 参加者リストの表示ページ（0始まり）
+let rosterSort = "default"; // 参加者リストの並び順（default / roi / volume）
+
+const ROSTER_PER_PAGE = 10;
 
 // ---- 汎用ヘルパー -----------------------------------------------------
 
@@ -230,23 +235,69 @@ async function startApp() {
     marketsMap(); // 先行取得（失敗しても market_id 表示にフォールバック）
   }
 
-  const genLine = (MODE === "enc" && STATIC?.meta?.generatedAtUTC)
-    ? `調査データ生成: ${fmtJst(Date.parse(STATIC.meta.generatedAtUTC))} JST / `
-    : "";
-  const modeLine = MODE === "enc" ? "（静的・暗号化データ）" : "（localhost ライブ取得）";
-  statusEl.textContent =
-    `参加者 ${ROSTER.length} 名 / ${genLine}` +
-    `data.json取得: ${fmtJst(Date.parse(COMP_META.fetchedAtUTC))} JST / ` +
-    `大会期間: ${fmtJst(Date.parse(COMP_META.competitionStartISO))} 〜 ${fmtJst(Date.parse(COMP_META.competitionEndISO))} JST ${modeLine}`;
-
+  updateStatusLine();
   renderRoster("");
+
+  // 各コントロールのリスナーは初回のみ登録（データ更新では再登録しない）
   document.getElementById("admin-search").addEventListener("input", (ev) => {
+    rosterPage = 0;
     renderRoster(ev.target.value);
   });
+  document.getElementById("roster-sort").addEventListener("click", (ev) => {
+    const btn = ev.target.closest(".sort-tab");
+    if (!btn) return;
+    rosterSort = btn.dataset.sort;
+    rosterPage = 0;
+    document.querySelectorAll("#roster-sort .sort-tab").forEach((b) =>
+      b.classList.toggle("sort-tab--active", b === btn));
+    renderRoster(searchValue());
+  });
+  document.getElementById("refresh-btn").addEventListener("click", refreshData);
 
   // URLハッシュ #0x... で直接表示（運営間の共有用）
   const hashAddr = location.hash.replace(/^#/, "");
   if (/^0x[0-9a-fA-F]{40}$/.test(hashAddr)) selectAddress(hashAddr);
+}
+
+function updateStatusLine() {
+  const statusEl = document.getElementById("roster-status");
+  const genLine = (MODE === "enc" && STATIC?.meta?.generatedAtUTC)
+    ? `調査データ生成: ${fmtJst(Date.parse(STATIC.meta.generatedAtUTC))} JST / `
+    : "";
+  const modeLine = MODE === "enc" ? "（静的・暗号化データ）" : "（localhost ライブ取得）";
+  statusEl.className = "loading-note";
+  statusEl.textContent =
+    `参加者 ${ROSTER.length} 名 / ${genLine}` +
+    `data.json取得: ${fmtJst(Date.parse(COMP_META.fetchedAtUTC))} JST / ` +
+    `大会期間: ${fmtJst(Date.parse(COMP_META.competitionStartISO))} 〜 ${fmtJst(Date.parse(COMP_META.competitionEndISO))} JST ${modeLine}`;
+}
+
+// データだけ再取得して再描画する（F5と違いパスフレーズ再入力が不要）
+async function refreshData() {
+  const btn = document.getElementById("refresh-btn");
+  const orig = btn.textContent;
+  btn.disabled = true;
+  btn.textContent = "更新中...";
+  try {
+    if (MODE === "enc") {
+      const encObj = await fetchJson(`${ENC_FILE}?t=${Date.now()}`);
+      STATIC = await decryptEnc(encObj, PASSPHRASE);
+      MARKETS = STATIC?.meta?.marketMap ?? {};
+    }
+    DB = await fetchJson(`data.json?t=${Date.now()}`);
+    COMP_META = DB.meta ?? {};
+    ROSTER = DB.participants ?? [];
+    updateStatusLine();
+    renderRoster(searchValue());
+    if (currentAddr) selectAddress(currentAddr); // 表示中の詳細も更新
+  } catch (err) {
+    const statusEl = document.getElementById("roster-status");
+    statusEl.className = "error-note";
+    statusEl.textContent = `データ更新に失敗しました: ${err.message}`;
+  } finally {
+    btn.disabled = false;
+    btn.textContent = orig;
+  }
 }
 
 // ---- 参加者リスト（検索） ---------------------------------------------
@@ -261,10 +312,43 @@ function filterParticipants(query) {
   );
 }
 
+// ROI順位 / Vol順位でソート（順位なし null は末尾）。default は元の順序。
+function sortRoster(list) {
+  if (rosterSort === "default") return list;
+  const key = rosterSort === "roi" ? "roiRank" : "volumeRank";
+  return [...list].sort((a, b) => {
+    const va = a[key] == null ? Infinity : Number(a[key]);
+    const vb = b[key] == null ? Infinity : Number(b[key]);
+    return va - vb;
+  });
+}
+
+function renderPager(totalPages) {
+  const pager = document.getElementById("roster-pager");
+  if (totalPages <= 1) { pager.innerHTML = ""; return; }
+  pager.innerHTML = Array.from({ length: totalPages }, (_, i) =>
+    `<button type="button" class="page-tab${i === rosterPage ? " page-tab--active" : ""}" data-page="${i}">${i + 1}</button>`
+  ).join("");
+  pager.querySelectorAll(".page-tab").forEach((b) => {
+    b.addEventListener("click", () => {
+      rosterPage = Number(b.dataset.page);
+      renderRoster(searchValue());
+    });
+  });
+}
+
 function renderRoster(query) {
   const body = document.getElementById("roster-body");
-  const matches = filterParticipants(query);
-  const rows = matches.map((p) => {
+  const matches = sortRoster(filterParticipants(query));
+
+  // ページング（10人刻み）。ページ範囲外になったら丸める。
+  const totalPages = Math.max(1, Math.ceil(matches.length / ROSTER_PER_PAGE));
+  if (rosterPage >= totalPages) rosterPage = totalPages - 1;
+  if (rosterPage < 0) rosterPage = 0;
+  const pageItems = matches.slice(rosterPage * ROSTER_PER_PAGE, (rosterPage + 1) * ROSTER_PER_PAGE);
+  renderPager(totalPages);
+
+  const rows = pageItems.map((p) => {
     const active = currentAddr && p.address?.toLowerCase() === currentAddr ? " roster-row--active" : "";
     const dep = p.minDepositMet
       ? '<span class="badge badge--ok">達成</span>'
@@ -918,6 +1002,7 @@ function setupLock() {
       try {
         const encObj = await fetchJson(`${ENC_FILE}?t=${Date.now()}`);
         STATIC = await decryptEnc(encObj, passEl.value);
+        PASSPHRASE = passEl.value; // データ更新ボタンで再利用（メモリのみ）
         unlockAndStart();
       } catch (err) {
         // 復号失敗（パスフレーズ違い）とファイル取得失敗を区別
