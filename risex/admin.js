@@ -519,12 +519,13 @@ function renderSummary(s, participant, { periodDeposits, periodWithdrawals }) {
   s = s ?? {};
   const endEquity = Number(pick(s, ["total_account_value"]));
 
-  // data.json selfCheck と同じ式: PnL = (endEquity + withdrawals) - qualifyingCapital
+  // 修正ルール（2026-08-24 内部決定・出金は損失扱い）:
+  // fetch_data.py の主計算と同じ式 PnL = endEquity - qualifyingCapital（出金の足し戻しなし）
   const qc = participant?.qualifyingCapital;
   let pnlHtml = "—";
   let roiHtml = "—";
-  if (qc != null && isFinite(endEquity) && periodWithdrawals != null) {
-    const pnl = (endEquity + Number(periodWithdrawals)) - qc;
+  if (qc != null && qc >= 0 && isFinite(endEquity)) {
+    const pnl = endEquity - qc;
     pnlHtml = `<span class="${signClass(pnl)}">${fmtUsd(pnl)}</span>`;
     if (qc > 0) {
       const roi = (pnl / qc) * 100;
@@ -553,7 +554,7 @@ function renderSummary(s, participant, { periodDeposits, periodWithdrawals }) {
     ["期間中の入金合計", periodDeposits != null ? fmtUsd(periodDeposits) : "—"],
     ["期間中の出金合計", periodWithdrawals != null ? fmtUsd(periodWithdrawals) : "—"],
     ["Qualifying Capital", qc != null ? fmtUsd(qc) : "—（未登録）"],
-    ["PnL（式: endEquity+出金−QC）", pnlHtml],
+    ["PnL（式: endEquity−QC・出金足し戻しなし）", pnlHtml],
     ["ROI（PnL ÷ QC）", roiHtml],
   ];
   setContent("summary-content",
