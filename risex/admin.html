@@ -265,7 +265,8 @@
 
       <div class="dashboard-card" id="card-transfers">
         <h2 class="section-title">入出金履歴</h2>
-        <p class="section-sub">出金行は Blockscout / LayerZero Scan を自動照会し、出金先・宛先チェーン・手数料控除後の着金額・着金状況を表示します。</p>
+        <p class="section-sub">出金行は Blockscout / LayerZero Scan を自動照会し、出金先・宛先チェーン・手数料控除後の着金額・着金状況を表示します。
+          集計はエントリー日時以降のみが対象で、エントリー前の行は「エントリー前（対象外）」として淡色表示されます。</p>
         <div id="transfers-content"></div>
       </div>
 
@@ -290,6 +291,6 @@
     </footer>
   </div>
 
-  <script src="admin.js?v=6"></script>
+  <script src="admin.js?v=7"></script>
 </body>
 </html>

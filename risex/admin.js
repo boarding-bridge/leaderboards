@@ -18,8 +18,9 @@ const ENC_FILE = "admin_data.enc";
 const IS_LOCALHOST = location.hostname === "localhost";
 const MODE = IS_LOCALHOST ? "live" : "enc";
 
-// 出来高の合算条件（risex-backend の INCLUDE_LIQUIDATIONS=false に合わせる）
-const INCLUDE_LIQUIDATIONS = false;
+// 出来高の合算条件（risex-backend config.py の INCLUDE_LIQUIDATIONS=True に合わせる。
+// ここが食い違うと live モードの出来高が data.json / enc データとズレる）
+const INCLUDE_LIQUIDATIONS = true;
 const WITHDRAW_FEE_USDC = 1; // イベントから fee が取れない場合のフォールバック値
 const RECENT_TRADES_SHOWN = 50;
 const MAX_PAGES = 30; // ページング暴走防止（1ページ1000件 × 30）
@@ -213,6 +214,40 @@ function inCompetitionPeriod(ms) {
   const { startMs, endMs } = competitionRangeNs();
   if (ms == null || startMs == null || endMs == null) return true;
   return ms >= startMs && ms < endMs;
+}
+
+// ---- エントリー基準の集計境界（2026-08-27 決定） ------------------------
+// 集計はエントリー日時(joined_at)以降のみが対象。data.json の
+// entryStartISO（= max(大会開始, joined_at)。バックエンドが算出）を正とし、
+// 無ければ joinedAt → 大会開始の順にフォールバックする。
+
+function entryStartMsFor(profile) {
+  const { startMs } = competitionRangeNs();
+  const iso = profile?.entryStartISO ?? profile?.joinedAt;
+  const ms = iso ? Date.parse(iso) : NaN;
+  if (isNaN(ms)) return startMs;
+  return startMs != null ? Math.max(startMs, ms) : ms;
+}
+
+// 表示中参加者の集計開始時刻（ms）。プロフィール未登録アドレスは大会開始
+function currentEntryStartMs() {
+  return entryStartMsFor(profileFor(currentAddr, null));
+}
+
+// transfer items からエントリー後（かつ期間内）の入出金合計を求める
+function computeEntrySums(items, entryMs) {
+  let deposits = 0;
+  let withdrawals = 0;
+  for (const it of items ?? []) {
+    const ms = toMs(it.block_time);
+    if (!inCompetitionPeriod(ms)) continue;
+    if (entryMs != null && ms != null && ms < entryMs) continue;
+    const amount = Number(it.amount);
+    if (!isFinite(amount)) continue;
+    if (it.type === "DEPOSIT") deposits += amount;
+    else if (it.type === "WITHDRAW") withdrawals += amount;
+  }
+  return { deposits, withdrawals };
 }
 
 // ---- 起動（復号後 / ライブ認証後に共通で呼ぶ） ------------------------
@@ -414,12 +449,22 @@ function selectEnc(address) {
     return;
   }
 
+  // エントリー後合算はバックエンド焼き込み値を優先し、旧形式の enc データ
+  // （エントリー基準対応前に生成）は transfers から自前計算でフォールバック
+  const entryMs = entryStartMsFor(profile);
+  const fallbackSums = Array.isArray(entry.transfers)
+    ? computeEntrySums(entry.transfers, entryMs)
+    : { deposits: null, withdrawals: null };
+  const entryDeposits = entry.entryDeposits ?? fallbackSums.deposits;
+  const entryWithdrawals = entry.entryWithdrawals ?? fallbackSums.withdrawals;
+
   // 各セクションは取得失敗時に <key>Error（文字列）が入る（バックエンド仕様）
   if (entry.summaryError) {
     setContent("summary-content", errorHtml(entry.summaryError));
   } else {
     renderSummary(entry.summary ?? {}, profile, {
       periodDeposits: entry.periodDeposits, periodWithdrawals: entry.periodWithdrawals,
+      entryDeposits, entryWithdrawals,
     });
   }
 
@@ -427,7 +472,8 @@ function selectEnc(address) {
     setContent("transfers-content", errorHtml(entry.transfersError));
   } else {
     renderTransfers(entry.transfers ?? [], {
-      periodDeposits: entry.periodDeposits, periodWithdrawals: entry.periodWithdrawals, capped: false,
+      periodDeposits: entry.periodDeposits, periodWithdrawals: entry.periodWithdrawals,
+      entryDeposits, entryWithdrawals, entryMs, capped: false,
     }, false);
   }
 
@@ -446,6 +492,7 @@ function selectEnc(address) {
     renderTrades({
       recent: entry.recentTrades ?? [], volume: entry.tradeVolume,
       count: entry.tradeCount, liq: entry.liqCount, capped: entry.tradePagesCapped,
+      entryVolume: entry.entryTradeVolume, entryCount: entry.entryTradeCount, entryMs,
     });
   }
 
@@ -490,6 +537,20 @@ function renderProfile(p, address) {
   }
   // discord フィールドは将来エントリーフォーム連携で追加予定（現状は未連携表示）
   const discord = pick(p, ["discord", "discordId", "discordUsername"]);
+
+  // エントリー日時（joined_at）と集計開始。開始前エントリーは大会開始から集計
+  const { startMs } = competitionRangeNs();
+  const joinedMs = p.joinedAt ? Date.parse(p.joinedAt) : NaN;
+  let entryHtml = '<span class="badge badge--dim">DB記録なし（大会開始から集計）</span>';
+  if (!isNaN(joinedMs)) {
+    entryHtml = esc(fmtJst(joinedMs));
+    if (startMs != null && joinedMs <= startMs) {
+      entryHtml += ' <span class="badge badge--dim">開始前 → 大会開始から集計</span>';
+    } else {
+      entryHtml += ' <span class="badge badge--warn">途中参加 → ここから集計</span>';
+    }
+  }
+
   const kv = [
     ["参加者名", esc(p.displayName ?? "—")],
     ["Xアカウント", p.xAccount
@@ -497,7 +558,8 @@ function renderProfile(p, address) {
       : "—"],
     ["Discord", discord ? esc(discord) : '<span class="badge badge--dim">未連携</span>'],
     ["アドレス", riseAddrLink(p.address ?? address)],
-    ["入金条件（期間中200 USDC+）", p.minDepositMet
+    ["エントリー日時（JST・集計開始）", entryHtml],
+    ["入金条件（エントリー後200 USDC+）", p.minDepositMet
       ? '<span class="badge badge--ok">達成</span>'
       : '<span class="badge badge--warn">未達</span>'],
     ["公式レジスト", p.officialRegistered
@@ -515,12 +577,13 @@ function renderProfile(p, address) {
 
 // ---- 資産サマリ -------------------------------------------------------
 
-function renderSummary(s, participant, { periodDeposits, periodWithdrawals }) {
+function renderSummary(s, participant, { periodDeposits, periodWithdrawals, entryDeposits, entryWithdrawals }) {
   s = s ?? {};
   const endEquity = Number(pick(s, ["total_account_value"]));
 
-  // 修正ルール（2026-08-24 内部決定・出金は損失扱い）:
-  // fetch_data.py の主計算と同じ式 PnL = endEquity - qualifyingCapital（出金の足し戻しなし）
+  // 修正ルール（2026-08-24 内部決定・出金は損失扱い）+ エントリー基準集計
+  // （2026-08-27 決定）: fetch_data.py の主計算と同じ式
+  // PnL = endEquity - qualifyingCapital（QC = エントリー時資産 + エントリー後入金）
   const qc = participant?.qualifyingCapital;
   let pnlHtml = "—";
   let roiHtml = "—";
@@ -551,10 +614,12 @@ function renderSummary(s, participant, { periodDeposits, periodWithdrawals }) {
     ["清算中", s.in_liquidation
       ? '<span class="badge badge--ng">清算中</span>'
       : '<span class="badge badge--ok">なし</span>'],
-    ["期間中の入金合計", periodDeposits != null ? fmtUsd(periodDeposits) : "—"],
-    ["期間中の出金合計", periodWithdrawals != null ? fmtUsd(periodWithdrawals) : "—"],
-    ["Qualifying Capital", qc != null ? fmtUsd(qc) : "—（未登録）"],
-    ["PnL（式: endEquity−QC・出金足し戻しなし）", pnlHtml],
+    ["期間中の入金合計（参考）", periodDeposits != null ? fmtUsd(periodDeposits) : "—"],
+    ["期間中の出金合計（参考）", periodWithdrawals != null ? fmtUsd(periodWithdrawals) : "—"],
+    ["エントリー後の入金合計", entryDeposits != null ? fmtUsd(entryDeposits) : "—"],
+    ["エントリー後の出金合計", entryWithdrawals != null ? fmtUsd(entryWithdrawals) : "—"],
+    ["Qualifying Capital（エントリー時資産+エントリー後入金）", qc != null ? fmtUsd(qc) : "—（未登録）"],
+    ["PnL（式: endEquity−QC・エントリー後基準・出金足し戻しなし）", pnlHtml],
     ["ROI（PnL ÷ QC）", roiHtml],
   ];
   setContent("summary-content",
@@ -569,6 +634,7 @@ async function loadSummaryLive(portfolioPromise, participant, transfersPromise, 
     if (token !== loadSeq) return;
     renderSummary(portfolio?.summary ?? {}, participant, {
       periodDeposits: transfers?.periodDeposits, periodWithdrawals: transfers?.periodWithdrawals,
+      entryDeposits: transfers?.entryDeposits, entryWithdrawals: transfers?.entryWithdrawals,
     });
   } catch (err) {
     if (token === loadSeq) setContent("summary-content", errorHtml(err));
@@ -577,7 +643,7 @@ async function loadSummaryLive(portfolioPromise, participant, transfersPromise, 
 
 // ---- 入出金履歴 -------------------------------------------------------
 
-function renderTransfers(items, { periodDeposits, periodWithdrawals, capped }, live) {
+function renderTransfers(items, { periodDeposits, periodWithdrawals, entryDeposits, entryWithdrawals, entryMs, capped }, live) {
   if (!items.length) {
     setContent("transfers-content", '<p class="loading-note">入出金の記録がありません。</p>');
     return;
@@ -585,10 +651,16 @@ function renderTransfers(items, { periodDeposits, periodWithdrawals, capped }, l
   const rows = items.map((it, i) => {
     const ms = toMs(it.block_time);
     const inPeriod = inCompetitionPeriod(ms);
+    // 期間内でもエントリー日時より前の入出金は集計対象外（2026-08-27 決定）
+    const preEntry = inPeriod && entryMs != null && ms != null && ms < entryMs;
+    const counted = inPeriod && !preEntry;
     const isWithdraw = it.type === "WITHDRAW";
     const typeBadge = isWithdraw
       ? '<span class="badge badge--warn">出金</span>'
       : '<span class="badge badge--ok">入金</span>';
+    let stateBadge = "";
+    if (!inPeriod) stateBadge = ' <span class="badge badge--dim">期間外</span>';
+    else if (preEntry) stateBadge = ' <span class="badge badge--dim">エントリー前（対象外）</span>';
     let traceCell;
     if (!isWithdraw) {
       traceCell = "—";
@@ -598,8 +670,8 @@ function renderTransfers(items, { periodDeposits, periodWithdrawals, capped }, l
       // enc モード: 焼き込み済み trace を表示
       traceCell = formatTrace(it.trace, it);
     }
-    return `<tr class="${inPeriod ? "" : "row-out-of-period"}">
-      <td>${fmtJst(ms)}${inPeriod ? "" : " <span class=\"badge badge--dim\">期間外</span>"}</td>
+    return `<tr class="${counted ? "" : "row-out-of-period"}">
+      <td>${fmtJst(ms)}${stateBadge}</td>
       <td>${typeBadge}</td>
       <td style="text-align:right;">${fmtUsd(it.amount)}</td>
       <td>${it.transaction_hash ? riseTxLink(it.transaction_hash) : "—"}</td>
@@ -609,8 +681,11 @@ function renderTransfers(items, { periodDeposits, periodWithdrawals, capped }, l
 
   setContent("transfers-content", `
     <div class="kv-grid" style="margin-bottom: 14px;">
-      <div class="kv-item"><div class="kv-label">期間中の入金合計</div><div class="kv-value">${fmtUsd(periodDeposits)}</div></div>
-      <div class="kv-item"><div class="kv-label">期間中の出金合計</div><div class="kv-value">${fmtUsd(periodWithdrawals)}</div></div>
+      <div class="kv-item"><div class="kv-label">エントリー後の入金合計（集計対象）</div><div class="kv-value">${fmtUsd(entryDeposits)}</div></div>
+      <div class="kv-item"><div class="kv-label">エントリー後の出金合計（集計対象）</div><div class="kv-value">${fmtUsd(entryWithdrawals)}</div></div>
+      <div class="kv-item"><div class="kv-label">期間中の入金合計（参考）</div><div class="kv-value">${fmtUsd(periodDeposits)}</div></div>
+      <div class="kv-item"><div class="kv-label">期間中の出金合計（参考）</div><div class="kv-value">${fmtUsd(periodWithdrawals)}</div></div>
+      <div class="kv-item"><div class="kv-label">エントリー日時（集計開始・JST）</div><div class="kv-value">${entryMs != null ? fmtJst(entryMs) : "—"}</div></div>
       <div class="kv-item"><div class="kv-label">総レコード数</div><div class="kv-value">${items.length}${capped ? "（上限打ち切り）" : ""}</div></div>
     </div>
     <div class="table-responsive">
@@ -717,8 +792,17 @@ async function loadTransfersLive(address, token) {
       else if (it.type === "WITHDRAW") periodWithdrawals += amount;
     }
 
-    renderTransfers(items, { periodDeposits, periodWithdrawals, capped }, true);
-    return { items, periodDeposits, periodWithdrawals };
+    // エントリー後の合算（集計対象。live モードはクライアント側で算出）
+    const entryMs = currentEntryStartMs();
+    const entrySums = computeEntrySums(items, entryMs);
+    const sums = {
+      periodDeposits, periodWithdrawals,
+      entryDeposits: entrySums.deposits, entryWithdrawals: entrySums.withdrawals,
+      entryMs,
+    };
+
+    renderTransfers(items, { ...sums, capped }, true);
+    return { items, ...sums };
   } catch (err) {
     if (token === loadSeq) setContent("transfers-content", errorHtml(err));
     return null;
@@ -828,7 +912,7 @@ function tradeMs(t) {
   return toMs(pick(t, ["time", "timestamp", "created_at"]));
 }
 
-function renderTrades({ recent, volume, count, liq, capped }) {
+function renderTrades({ recent, volume, count, liq, capped, entryVolume, entryCount, entryMs }) {
   const sorted = [...(recent ?? [])].sort((a, b) => (tradeMs(b) ?? 0) - (tradeMs(a) ?? 0));
   const shown = sorted.slice(0, RECENT_TRADES_SHOWN);
   const hasTrades = (count ?? shown.length) > 0;
@@ -836,8 +920,11 @@ function renderTrades({ recent, volume, count, liq, capped }) {
   const rows = shown.map((t) => {
     const notional = Number(t.price) * Number(t.size);
     const txHash = t.blockchain_data?.tx_hash ?? t.tx_hash;
-    return `<tr>
-      <td>${fmtJst(tradeMs(t))}</td>
+    const ms = tradeMs(t);
+    // エントリー日時より前の約定は集計対象外（2026-08-27 決定）
+    const preEntry = entryMs != null && ms != null && ms < entryMs;
+    return `<tr class="${preEntry ? "row-out-of-period" : ""}">
+      <td>${fmtJst(ms)}${preEntry ? " <span class=\"badge badge--dim\">エントリー前</span>" : ""}</td>
       <td>${esc(marketLabel(t.market_id, t.market))}</td>
       <td>${esc(t.side ?? "—")}</td>
       <td style="text-align:right;">${fmtNum(t.price, 6)}</td>
@@ -851,8 +938,10 @@ function renderTrades({ recent, volume, count, liq, capped }) {
 
   setContent("trades-content", `
     <div class="kv-grid" style="margin-bottom: 14px;">
-      <div class="kv-item"><div class="kv-label">期間中出来高（清算除外）</div><div class="kv-value">${fmtUsd(volume, 0)}</div></div>
-      <div class="kv-item"><div class="kv-label">約定件数</div><div class="kv-value">${(count ?? shown.length).toLocaleString()}${capped ? "（上限打ち切り）" : ""}</div></div>
+      <div class="kv-item"><div class="kv-label">エントリー後出来高（集計対象）</div><div class="kv-value">${entryVolume != null ? fmtUsd(entryVolume, 0) : "—（旧データ・要再生成）"}</div></div>
+      <div class="kv-item"><div class="kv-label">エントリー後約定件数</div><div class="kv-value">${entryCount != null ? entryCount.toLocaleString() : "—"}</div></div>
+      <div class="kv-item"><div class="kv-label">期間中出来高（参考）</div><div class="kv-value">${fmtUsd(volume, 0)}</div></div>
+      <div class="kv-item"><div class="kv-label">期間中約定件数</div><div class="kv-value">${(count ?? shown.length).toLocaleString()}${capped ? "（上限打ち切り）" : ""}</div></div>
       <div class="kv-item"><div class="kv-label">うち清算約定</div><div class="kv-value">${(liq ?? 0).toLocaleString()}</div></div>
     </div>
     ${hasTrades ? `
@@ -886,15 +975,28 @@ async function loadTradesLive(address, token) {
     await marketsMap();
     if (token !== loadSeq) return;
 
-    // 期間中出来高（price × size、清算約定は INCLUDE_LIQUIDATIONS=false に合わせ除外）
+    // 期間中出来高（price × size、INCLUDE_LIQUIDATIONS=true のため清算約定も合算）
+    // + エントリー後出来高（集計対象。2026-08-27 決定）
+    const entryMs = currentEntryStartMs();
     let volume = 0;
     let liq = 0;
+    let entryVolume = 0;
+    let entryCount = 0;
     for (const t of trades) {
       if (t.is_liquidation) { liq++; if (!INCLUDE_LIQUIDATIONS) continue; }
       const v = Number(t.price) * Number(t.size);
-      if (isFinite(v)) volume += v;
+      if (!isFinite(v)) continue;
+      volume += v;
+      const ms = tradeMs(t);
+      if (entryMs == null || (ms != null && ms >= entryMs)) {
+        entryVolume += v;
+        entryCount += 1;
+      }
     }
-    renderTrades({ recent: trades, volume, count: trades.length, liq, capped });
+    renderTrades({
+      recent: trades, volume, count: trades.length, liq, capped,
+      entryVolume, entryCount, entryMs,
+    });
   } catch (err) {
     if (token === loadSeq) setContent("trades-content", errorHtml(err));
   }
