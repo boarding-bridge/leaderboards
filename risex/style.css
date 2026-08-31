@@ -178,6 +178,16 @@ body {
   transform: scale(0.98);
 }
 
+/* エントリー締切後: 暗転させて操作不可にする */
+.hero-cta.cta-closed {
+  background: linear-gradient(135deg, #343a44, #262b33);
+  color: var(--text-secondary);
+  box-shadow: none;
+  animation: none;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
 /* セクション間に置くCTA（大会規約の上など） */
 .section-cta {
   margin-bottom: 30px;

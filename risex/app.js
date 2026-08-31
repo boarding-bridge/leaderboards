@@ -48,6 +48,8 @@ const I18N = {
     statWagyuNote: "¥10,000相当の近江牛",
     ctaJoin: "トレード大会に参加する →",
     ctaNote: "エントリーフォームが開きます",
+    ctaClosed: "エントリーは終了しました",
+    ctaClosedNote: "エントリー受付は9月5日 23:59 JSTで終了しました",
     overviewTitle: "大会概要",
     entryPeriod: "エントリー期間：〜9月5日 23:59 JST",
     compPeriod: "大会期間：2026年8月18日〜9月7日 23:59 JST",
@@ -79,6 +81,7 @@ const I18N = {
     entryErrDupName: "この参加名は既に使用されています。別の名前を入力してください。",
     entryErrNetwork: "送信に失敗しました。時間をおいて再度お試しください。",
     entryErrApiUnset: "エントリー受付は現在準備中です。しばらくお待ちください。",
+    entryErrClosed: "エントリー受付は終了しました。",
     // Discord連携
     discordPerk1: "優勝者にはboarding bridgeで「和牛王」ロールを付与！",
     discordPerk2: "「和牛王」ロール保持者への特典も検討中です。",
@@ -151,6 +154,8 @@ const I18N = {
     statWagyuNote: "Omi beef worth ¥10,000",
     ctaJoin: "Join the Trading Competition →",
     ctaNote: "Opens the entry form",
+    ctaClosed: "Entry Has Closed",
+    ctaClosedNote: "Entries closed at Sep 5, 23:59 JST",
     overviewTitle: "Overview",
     entryPeriod: "Entry period: Until Sep 5, 2026, 23:59 JST",
     compPeriod: "Competition period: Aug 18 - Sep 7, 2026, 23:59 JST",
@@ -182,6 +187,7 @@ const I18N = {
     entryErrDupName: "This display name is already taken. Please choose another.",
     entryErrNetwork: "Failed to submit. Please try again later.",
     entryErrApiUnset: "Entry submission is being prepared. Please check back soon.",
+    entryErrClosed: "The entry period has ended.",
     // Discord linking
     discordPerk1: "The winner will receive the \"Wagyu King\" role on boarding bridge!",
     discordPerk2: "Perks for \"Wagyu King\" role holders are also under consideration.",
@@ -299,6 +305,34 @@ function setStatus(key, arg = null) {
 
 // ---- エントリーフォーム -----------------------------------------------
 
+// エントリー締切: 2026-09-05 23:59 JST まで受付（JST 9/6 00:00 以降は締切）
+const ENTRY_DEADLINE_MS = Date.parse("2026-09-06T00:00:00+09:00");
+
+function isEntryClosed() {
+  return Date.now() >= ENTRY_DEADLINE_MS;
+}
+
+// 締切後のUI: CTAボタンを暗転・無効化し「エントリーは終了しました」表示にする。
+// data-i18n を締切用キーに差し替えることで、言語切替後も表示が維持される
+function applyEntryClosedUI() {
+  document.querySelectorAll(".hero-cta").forEach((cta) => {
+    cta.classList.add("cta-closed");
+    cta.removeAttribute("href");
+    const main = cta.querySelector(".cta-main");
+    const note = cta.querySelector(".cta-note");
+    if (main) {
+      main.dataset.i18n = "ctaClosed";
+      main.textContent = t("ctaClosed");
+    }
+    if (note) {
+      note.dataset.i18n = "ctaClosedNote";
+      note.textContent = t("ctaClosedNote");
+    }
+  });
+  const submitBtn = document.getElementById("entry-submit");
+  if (submitBtn) submitBtn.disabled = true;
+}
+
 // エントリー登録先（Supabase）。X認証はSupabase Auth（X OAuth 2.0）、
 // 登録は entries テーブルへのinsert（RLSにより認証済みユーザーのみ可）
 const SUPABASE_URL = "https://zynxzpbcqqwhumggdama.supabase.co";
@@ -407,6 +441,11 @@ if (sbClient) {
 })();
 
 function openEntryModal() {
+  // 締切前に開いたままのページからクリックされた場合もここで弾く
+  if (isEntryClosed()) {
+    applyEntryClosedUI();
+    return;
+  }
   const modal = document.getElementById("entry-modal");
   if (modal) modal.classList.add("active");
 }
@@ -594,6 +633,13 @@ window.addEventListener("message", async (ev) => {
 async function submitEntry(ev) {
   ev.preventDefault();
   if (entrySubmitting) return;
+
+  // 締切前に開いたままのフォームから送信された場合
+  if (isEntryClosed()) {
+    showEntryError("entryErrClosed");
+    applyEntryClosedUI();
+    return;
+  }
 
   const name = document.getElementById("entry-name").value.trim();
   const address = document.getElementById("entry-address").value.trim();
@@ -1103,6 +1149,14 @@ function renderRanking(participants, totalVolume, prizes, preStart) {
 // 起動時に言語を適用し、リワードテーブルをデフォルト表示してからデータを取得
 window.onload = () => {
   applyI18n();
+  if (isEntryClosed()) {
+    applyEntryClosedUI();
+  } else {
+    // ページ表示中に締切時刻を迎えた場合も自動でUIを切り替える
+    // （setTimeoutの上限 2^31-1 ms ≒ 24.8日を超える場合は設定しない）
+    const msToDeadline = ENTRY_DEADLINE_MS - Date.now();
+    if (msToDeadline < 2 ** 31 - 1) setTimeout(applyEntryClosedUI, msToDeadline);
+  }
   setStatus("statusLoading");
   renderRewardTables(null);
   fetchData();
