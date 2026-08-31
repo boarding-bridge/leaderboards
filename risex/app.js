@@ -880,10 +880,24 @@ async function fetchData() {
     lastJson = await dataResponse.json();
     render();
     setStatus("lastUpdated", lastJson.meta.fetchedAtUTC);
+    scheduleEndRefresh();
   } catch (error) {
     console.error(error);
     setStatus("statusError");
   }
+}
+
+// 大会終了時刻を跨いでページを開きっぱなしでも「集計中」(blind.json)表示へ
+// 自動で切り替わるよう、終了時刻の少し後に一度だけ再取得を仕掛ける。
+// （setTimeoutの上限 2^31-1 ms ≒ 24.8日を超える場合は設定しない）
+let endRefreshTimer = null;
+function scheduleEndRefresh() {
+  if (endRefreshTimer !== null) return;
+  const endISO = lastJson && lastJson.meta && lastJson.meta.competitionEndISO;
+  if (!endISO) return;
+  const msToEnd = Date.parse(endISO) - Date.now();
+  if (!Number.isFinite(msToEnd) || msToEnd <= 0 || msToEnd >= 2 ** 31 - 1) return;
+  endRefreshTimer = setTimeout(fetchData, msToEnd + 5000);
 }
 
 // 取得済みデータから全体を描画する（言語切り替え時にも再利用）
