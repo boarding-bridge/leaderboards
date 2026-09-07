@@ -751,8 +751,12 @@ function compareOfficialRank(a, b) {
 function updateHeroPool(totalVolume) {
   const noteEl = document.getElementById("hero-pool-note");
   if (!noteEl) return;
-  const idx = totalVolume != null ? getActiveTierIndex(totalVolume) : REWARD_TIERS.length - 1;
-  const total = tierPoolTotal(REWARD_TIERS[idx]);
+  // データ未取得・blind中は「現在ティア」を出さない
+  if (totalVolume == null) {
+    noteEl.innerHTML = t("statPoolNote1");
+    return;
+  }
+  const total = tierPoolTotal(REWARD_TIERS[getActiveTierIndex(totalVolume)]);
   noteEl.innerHTML = `${t("statPoolNote1")}<br>${t("statPoolNote2").replace("{n}", total.toLocaleString())}`;
 }
 
@@ -760,8 +764,10 @@ function renderRewardTables(totalVolume) {
   updateHeroPool(totalVolume);
 
   const volEl = document.getElementById("reward-vol");
-  if (volEl && totalVolume != null) {
-    volEl.textContent = `$${totalVolume.toLocaleString(undefined, { maximumFractionDigits: 0 })}`;
+  if (volEl) {
+    volEl.textContent = totalVolume != null
+      ? `$${totalVolume.toLocaleString(undefined, { maximumFractionDigits: 0 })}`
+      : "—";
   }
 
   const activeIdx = totalVolume != null ? getActiveTierIndex(totalVolume) : -1;
@@ -955,8 +961,8 @@ function render() {
     renderRanking(participants, totalVolume, tier.prizes, preStart);
   }
 
-  // リワードテーブル
-  renderRewardTables(totalVolume);
+  // リワードテーブル（blind中は総出来高を渡さず、全体Vol・現在ティア表示も伏せる）
+  renderRewardTables(isBlind ? null : totalVolume);
 }
 
 function traderCell(item) {
