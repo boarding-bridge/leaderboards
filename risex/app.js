@@ -40,6 +40,7 @@ const I18N = {
     statPoolLabel: "リワード総額（最大）",
     statPoolNote1: "Wagyuギフト+Giveaway等総額",
     statPoolNote2: "現在ティア: {n} USDC",
+    statPoolNote2Final: "最終ティア: {n} USDC",
     statPeriodLabel: "大会期間",
     statPeriodValue: "8/18 - 9/7",
     statPeriodNote: "2026年・9月7日 23:59 JSTまで",
@@ -101,10 +102,15 @@ const I18N = {
     condRoiVolume: "ROI部門のランキング対象となるには $50,000 以上の取引量が必要です。",
     bannerPlaceholder: "🖼️ バナー画像（準備中）",
     rewardCurrentVol: "現在の Total Volume: ",
+    rewardFinalVol: "最終 Total Volume: ",
     rewardNote: "●賞金プールは大会期間中の総取引量（対象アカウントのみ）に応じて4ティアで変動します。<br>●各部門の上位3名にはWagyuギフト（¥10,000相当）が贈られます。",
     refresh: "🔄 更新",
     sortLabel: "ランキング表示:",
     rankingNote: "●CapitalはROI計算の分母となり、計算式は（大会開始時のエクイティ＋期間中の入金）です。<br>●最低取引量（$50,000）を達成すると名前に ✅ がつきます。<br>●入金条件（大会期間中に 200 USDC以上）を満たしていない場合、行が黄色の枠・背景、名前がグレーで表示されます。<br>●ROIランキングは入金条件と最低取引量、Volumeランキングは入金条件を満たすと順位が表示されます。<br>●入賞圏の順位には現在ティアのリワード額を表示しています。🥩は上位3名へのWagyuギフト（¥10,000相当の和牛チケット）です。",
+    rankingNoteFinal: "●CapitalはROI計算の分母となり、計算式は（大会開始時のエクイティ＋期間中の入金）です。<br>●最低取引量（$50,000）を達成すると名前に ✅ がつきます。<br>●入金条件（大会期間中に 200 USDC以上）を満たしていない場合、行が黄色の枠・背景、名前がグレーで表示されます。<br>●ROIランキングは入金条件と最低取引量、Volumeランキングは入金条件を満たすと順位が表示されます。<br>●入賞圏の順位には最終ティアのリワード額を表示しています。🥩は上位3名へのWagyuギフト（¥10,000相当の和牛チケット）です。<br>●最終的な入賞者の確定および失格の判断はRISExが行います。",
+    finalBadge: "FINAL",
+    finalBannerTitle: "🏆 最終結果",
+    finalBannerBody: "本大会は終了しました。以下は集計が完了した最終ランキングです。",
     rankingNotePre: "●大会開始前のエントリー確認表示です。Depositはこれまでの累計入金額です（参考表示）。<br>●リワード対象の判定は大会期間中の入金 200 USDC以上で行われます（大会開始後に期間中の入金で判定されます）。<br>●大会開始後はDeposit欄に代わりCAPITAL（大会開始時エクイティ＋期間中入金の合計）が表示されます。<br>●ランキング・ROI等の数値は大会開始後に表示されます。",
     volTotalLabel: "Total Volume: ",
     rulesTitle: "大会規約",
@@ -132,6 +138,7 @@ const I18N = {
     statusError: "エラーが発生しました。詳細はコンソールを確認してください。",
     lastUpdated: "最終更新",
     currentTier: " ◀ 現在",
+    finalTier: " ◀ 確定",
     thRank: "Rank",
     thPrize: "賞金",
     thWagyu: "Wagyu",
@@ -146,6 +153,7 @@ const I18N = {
     statPoolLabel: "Total Rewards (max)",
     statPoolNote1: "Total incl. Wagyu gifts + giveaways",
     statPoolNote2: "Current tier: {n} USDC",
+    statPoolNote2Final: "Final tier: {n} USDC",
     statPeriodLabel: "Period",
     statPeriodValue: "Aug 18 - Sep 7",
     statPeriodNote: "2026, until Sep 7 23:59 JST",
@@ -207,10 +215,15 @@ const I18N = {
     condRoiVolume: "A minimum traded volume of $50,000 is required to be ranked in the ROI track.",
     bannerPlaceholder: "🖼️ Banner (coming soon)",
     rewardCurrentVol: "Current Total Volume: ",
+    rewardFinalVol: "Final Total Volume: ",
     rewardNote: "●The prize pool varies across four tiers based on the total trading volume (entered accounts only) during the competition.<br>●The top three in each track will also receive a Wagyu gift (worth ¥10,000).",
     refresh: "🔄 Refresh",
     sortLabel: "Rank by:",
     rankingNote: "●Capital is the ROI denominator, calculated as (starting equity + deposits during the competition).<br>●Traders who reach the minimum volume ($50,000) get a ✅ next to their name.<br>●Traders who have not met the deposit requirement (200 USDC or more during the competition) are shown with a yellow-bordered row and a gray name.<br>●Ranks appear in the ROI ranking once both the deposit and minimum-volume requirements are met, and in the Volume ranking once the deposit requirement is met.<br>●Prize-zone ranks show the reward amount for the current tier. 🥩 marks the Wagyu gift for the top 3 (a beef ticket worth ¥10,000).",
+    rankingNoteFinal: "●Capital is the ROI denominator, calculated as (starting equity + deposits during the competition).<br>●Traders who reach the minimum volume ($50,000) get a ✅ next to their name.<br>●Traders who have not met the deposit requirement (200 USDC or more during the competition) are shown with a yellow-bordered row and a gray name.<br>●Ranks appear in the ROI ranking once both the deposit and minimum-volume requirements are met, and in the Volume ranking once the deposit requirement is met.<br>●Prize-zone ranks show the reward amount for the final tier. 🥩 marks the Wagyu gift for the top 3 (a beef ticket worth ¥10,000).<br>●Final confirmation of winners and any disqualification decisions are made by RISEx.",
+    finalBadge: "FINAL",
+    finalBannerTitle: "🏆 Final Results",
+    finalBannerBody: "The competition has ended. The ranking below is the final, fully tallied result.",
     rankingNotePre: "●Pre-competition entry check. Deposit shows your total deposits so far (for reference).<br>●Reward eligibility is determined by deposits of 200 USDC or more during the competition period (evaluated after the competition starts).<br>●Once the competition starts, the Deposit column will be replaced by CAPITAL (starting equity + deposits during the competition).<br>●Rankings, ROI and other stats will appear once the competition starts.",
     volTotalLabel: "Total Volume: ",
     rulesTitle: "Terms & Conditions",
@@ -238,6 +251,7 @@ const I18N = {
     statusError: "An error occurred. See the browser console for details.",
     lastUpdated: "Last updated",
     currentTier: " ◀ Current",
+    finalTier: " ◀ Final",
     thRank: "Rank",
     thPrize: "Prize",
     thWagyu: "Wagyu",
@@ -757,17 +771,26 @@ function updateHeroPool(totalVolume) {
     return;
   }
   const total = tierPoolTotal(REWARD_TIERS[getActiveTierIndex(totalVolume)]);
-  noteEl.innerHTML = `${t("statPoolNote1")}<br>${t("statPoolNote2").replace("{n}", total.toLocaleString())}`;
+  const noteKey = isFinal() ? "statPoolNote2Final" : "statPoolNote2";
+  noteEl.innerHTML = `${t("statPoolNote1")}<br>${t(noteKey).replace("{n}", total.toLocaleString())}`;
 }
 
 function renderRewardTables(totalVolume) {
   updateHeroPool(totalVolume);
+  const final = totalVolume != null && isFinal();
 
   const volEl = document.getElementById("reward-vol");
   if (volEl) {
     volEl.textContent = totalVolume != null
       ? `$${totalVolume.toLocaleString(undefined, { maximumFractionDigits: 0 })}`
       : "—";
+  }
+  // 「現在の Total Volume」ラベルは最終結果時に「最終」へ（言語切替時も render() 経由で再設定される）
+  const volLabelEl = document.getElementById("reward-vol-label");
+  if (volLabelEl) {
+    const key = final ? "rewardFinalVol" : "rewardCurrentVol";
+    volLabelEl.setAttribute("data-i18n", key);
+    volLabelEl.textContent = t(key);
   }
 
   const activeIdx = totalVolume != null ? getActiveTierIndex(totalVolume) : -1;
@@ -777,7 +800,7 @@ function renderRewardTables(totalVolume) {
   const tierColors = ["tier-tab--green", "tier-tab--teal", "tier-tab--yellow", "tier-tab--purple"];
   tabsEl.innerHTML = REWARD_TIERS.map((tier, i) =>
     `<button class="tier-tab ${tierColors[i]}${i === activeIdx ? " tier-tab--active tier-tab--selected" : ""}" data-tier="${i}">` +
-    `<span class="tier-tab-label">${tier.label}${i === activeIdx ? t("currentTier") : ""}</span>` +
+    `<span class="tier-tab-label">${tier.label}${i === activeIdx ? t(final ? "finalTier" : "currentTier") : ""}</span>` +
     `<span class="tier-tab-pool">${tierPoolTotal(tier).toLocaleString()} USDC</span>` +
     `</button>`
   ).join("");
@@ -932,6 +955,14 @@ function isPreStart() {
   if (!startISO) return false;
   const startMs = Date.parse(startISO);
   return Number.isFinite(startMs) && Date.now() < startMs;
+}
+
+// 最終結果か（data.json の meta に finalized / competitionState=ended が立っているか）。
+// 該当時は「現在ティア」等の現在形の文言を「最終」に切り替え、ランキングに最終結果バナーを出す
+function isFinal() {
+  const meta = lastJson && lastJson.meta;
+  if (!meta) return false;
+  return meta.finalized === true || meta.competitionState === "ended";
 }
 
 // ランキングの表示モード（統合テーブルのソート切替: "roi" | "volume"）
@@ -1127,6 +1158,19 @@ function renderRanking(participants, totalVolume, prizes, preStart) {
   const body = document.getElementById("ranking-body");
   const card = body.closest(".dashboard-card");
 
+  // 最終結果バナー・FINALバッジ（data.json が finalized のときのみ表示）
+  const final = !preStart && isFinal();
+  const badgeEl = document.getElementById("ranking-final-badge");
+  if (badgeEl) {
+    badgeEl.textContent = t("finalBadge");
+    badgeEl.style.display = final ? "" : "none";
+  }
+  const bannerEl = document.getElementById("ranking-final-banner");
+  if (bannerEl) {
+    bannerEl.innerHTML = `<strong>${t("finalBannerTitle")}</strong><span>${t("finalBannerBody")}</span>`;
+    bannerEl.style.display = final ? "" : "none";
+  }
+
   // ソート切替タブ（開始前はランキングが無いため非表示）
   const sortTabsEl = document.getElementById("sort-tabs");
   sortTabsEl.style.display = preStart ? "none" : "";
@@ -1173,7 +1217,7 @@ function renderRanking(participants, totalVolume, prizes, preStart) {
   // 注記も開始前用に切り替える（言語切替時は render() 経由で再設定される）
   const noteEl = card.querySelector("[data-i18n-html]");
   if (noteEl) {
-    const key = preStart ? "rankingNotePre" : "rankingNote";
+    const key = preStart ? "rankingNotePre" : final ? "rankingNoteFinal" : "rankingNote";
     noteEl.setAttribute("data-i18n-html", key);
     noteEl.innerHTML = t(key);
   }
