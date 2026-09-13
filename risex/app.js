@@ -836,6 +836,11 @@ function renderTierDetail(container, tierIdx) {
 }
 
 // ---- blindモード ------------------------------------------------------
+// blind.json の設定でランキング部を「集計中」メッセージに差し替える。
+//   blindStartISO : この時刻以降は blind（未設定なら常に非blind）
+//   blindEndISO   : この時刻以降は blind 解除＝最終結果を公開（任意。未設定/null なら解除しない）
+// 最終結果の公開は blindEndISO に公開時刻を書くだけでよい（過去時刻なら即時公開）。
+// 開きっぱなしのページも scheduleBoundaryRefresh により公開時刻に自動で切り替わる。
 
 async function fetchBlindMode() {
   try {
@@ -845,7 +850,13 @@ async function fetchBlindMode() {
     if (!data.blindStartISO) return null;
     const startMs = Date.parse(data.blindStartISO);
     if (isNaN(startMs)) return null;
-    return Date.now() >= startMs ? data : null;
+    const now = Date.now();
+    if (now < startMs) return null;
+    if (data.blindEndISO) {
+      const endMs = Date.parse(data.blindEndISO);
+      if (!isNaN(endMs) && now >= endMs) return null;
+    }
+    return data;
   } catch {
     return null;
   }
@@ -886,24 +897,32 @@ async function fetchData() {
     lastJson = await dataResponse.json();
     render();
     setStatus("lastUpdated", lastJson.meta.fetchedAtUTC);
-    scheduleEndRefresh();
+    scheduleBoundaryRefresh();
   } catch (error) {
     console.error(error);
     setStatus("statusError");
   }
 }
 
-// 大会終了時刻を跨いでページを開きっぱなしでも「集計中」(blind.json)表示へ
-// 自動で切り替わるよう、終了時刻の少し後に一度だけ再取得を仕掛ける。
-// （setTimeoutの上限 2^31-1 ms ≒ 24.8日を超える場合は設定しない）
-let endRefreshTimer = null;
-function scheduleEndRefresh() {
-  if (endRefreshTimer !== null) return;
-  const endISO = lastJson && lastJson.meta && lastJson.meta.competitionEndISO;
-  if (!endISO) return;
-  const msToEnd = Date.parse(endISO) - Date.now();
-  if (!Number.isFinite(msToEnd) || msToEnd <= 0 || msToEnd >= 2 ** 31 - 1) return;
-  endRefreshTimer = setTimeout(fetchData, msToEnd + 5000);
+// ページを開きっぱなしでも表示が自動で切り替わるよう、直近の境界時刻
+// （大会終了→「集計中」/ blindEndISO→最終結果公開）の少し後に一度再取得を仕掛ける。
+// 発火後は再度スケジュールするので、終了→公開の2段階にも対応する。
+// （setTimeoutの上限 2^31-1 ms ≒ 24.8日を超える境界は設定しない）
+let boundaryRefreshTimer = null;
+function scheduleBoundaryRefresh() {
+  if (boundaryRefreshTimer !== null) return;
+  const now = Date.now();
+  const waits = [
+    lastJson && lastJson.meta && lastJson.meta.competitionEndISO,
+    lastBlind && lastBlind.blindEndISO,
+  ]
+    .map((iso) => (iso ? Date.parse(iso) - now : NaN))
+    .filter((ms) => Number.isFinite(ms) && ms > 0 && ms < 2 ** 31 - 1);
+  if (waits.length === 0) return;
+  boundaryRefreshTimer = setTimeout(() => {
+    boundaryRefreshTimer = null;
+    fetchData();
+  }, Math.min(...waits) + 5000);
 }
 
 // 取得済みデータから全体を描画する（言語切り替え時にも再利用）
