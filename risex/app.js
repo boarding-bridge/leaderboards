@@ -49,8 +49,8 @@ const I18N = {
     statWagyuNote: "¥10,000相当の近江牛",
     ctaJoin: "トレード大会に参加する →",
     ctaNote: "エントリーフォームが開きます",
-    ctaClosed: "エントリーは終了しました",
-    ctaClosedNote: "エントリー受付は9月5日 23:59 JSTで終了しました",
+    ctaClosed: "大会は終了しました",
+    ctaClosedNote: "大会は9月7日 23:59 JSTで終了しました",
     overviewTitle: "大会概要",
     entryPeriod: "エントリー期間：〜9月5日 23:59 JST",
     compPeriod: "大会期間：2026年8月18日〜9月7日 23:59 JST",
@@ -103,7 +103,7 @@ const I18N = {
     bannerPlaceholder: "🖼️ バナー画像（準備中）",
     rewardCurrentVol: "現在の Total Volume: ",
     rewardFinalVol: "最終 Total Volume: ",
-    rewardNote: "●賞金プールは大会期間中の総取引量（対象アカウントのみ）に応じて4ティアで変動します。<br>●各部門の上位3名にはWagyuギフト（¥10,000相当）が贈られます。",
+    rewardNote: "●各部門の上位3名にはWagyuギフト（¥10,000相当）が贈られます。",
     refresh: "🔄 更新",
     sortLabel: "ランキング表示:",
     rankingNote: "●CapitalはROI計算の分母となり、計算式は（大会開始時のエクイティ＋期間中の入金）です。<br>●最低取引量（$50,000）を達成すると名前に ✅ がつきます。<br>●入金条件（大会期間中に 200 USDC以上）を満たしていない場合、行が黄色の枠・背景、名前がグレーで表示されます。<br>●ROIランキングは入金条件と最低取引量、Volumeランキングは入金条件を満たすと順位が表示されます。<br>●入賞圏の順位には現在ティアのリワード額を表示しています。🥩は上位3名へのWagyuギフト（¥10,000相当の和牛チケット）です。",
@@ -162,8 +162,8 @@ const I18N = {
     statWagyuNote: "Omi beef worth ¥10,000",
     ctaJoin: "Join the Trading Competition →",
     ctaNote: "Opens the entry form",
-    ctaClosed: "Entry Has Closed",
-    ctaClosedNote: "Entries closed at Sep 5, 23:59 JST",
+    ctaClosed: "The Competition Has Ended",
+    ctaClosedNote: "The competition ended at Sep 7, 23:59 JST",
     overviewTitle: "Overview",
     entryPeriod: "Entry period: Until Sep 5, 2026, 23:59 JST",
     compPeriod: "Competition period: Aug 18 - Sep 7, 2026, 23:59 JST",
@@ -216,7 +216,7 @@ const I18N = {
     bannerPlaceholder: "🖼️ Banner (coming soon)",
     rewardCurrentVol: "Current Total Volume: ",
     rewardFinalVol: "Final Total Volume: ",
-    rewardNote: "●The prize pool varies across four tiers based on the total trading volume (entered accounts only) during the competition.<br>●The top three in each track will also receive a Wagyu gift (worth ¥10,000).",
+    rewardNote: "●The top three in each track will also receive a Wagyu gift (worth ¥10,000).",
     refresh: "🔄 Refresh",
     sortLabel: "Rank by:",
     rankingNote: "●Capital is the ROI denominator, calculated as (starting equity + deposits during the competition).<br>●Traders who reach the minimum volume ($50,000) get a ✅ next to their name.<br>●Traders who have not met the deposit requirement (200 USDC or more during the competition) are shown with a yellow-bordered row and a gray name.<br>●Ranks appear in the ROI ranking once both the deposit and minimum-volume requirements are met, and in the Volume ranking once the deposit requirement is met.<br>●Prize-zone ranks show the reward amount for the current tier. 🥩 marks the Wagyu gift for the top 3 (a beef ticket worth ¥10,000).",
@@ -795,30 +795,9 @@ function renderRewardTables(totalVolume) {
 
   const activeIdx = totalVolume != null ? getActiveTierIndex(totalVolume) : -1;
 
-  // タブ
-  const tabsEl = document.getElementById("tier-tabs");
-  const tierColors = ["tier-tab--green", "tier-tab--teal", "tier-tab--yellow", "tier-tab--purple"];
-  tabsEl.innerHTML = REWARD_TIERS.map((tier, i) =>
-    `<button class="tier-tab ${tierColors[i]}${i === activeIdx ? " tier-tab--active tier-tab--selected" : ""}" data-tier="${i}">` +
-    `<span class="tier-tab-label">${tier.label}${i === activeIdx ? t(final ? "finalTier" : "currentTier") : ""}</span>` +
-    `<span class="tier-tab-pool">${tierPoolTotal(tier).toLocaleString()} USDC</span>` +
-    `</button>`
-  ).join("");
-
-  // テーブル
+  // テーブル（ティア切替タブは大会終了に伴い廃止。該当ティアの表のみ表示）
   const tablesEl = document.getElementById("reward-tables");
   renderTierDetail(tablesEl, activeIdx >= 0 ? activeIdx : REWARD_TIERS.length - 1);
-
-  // 再描画のたびにリスナーが積み重ならないよう onclick で上書きする
-  tabsEl.onclick = (e) => {
-    const btn = e.target.closest(".tier-tab");
-    if (!btn) return;
-    const idx = parseInt(btn.dataset.tier, 10);
-    tabsEl.querySelectorAll(".tier-tab").forEach((b, i) => {
-      b.classList.toggle("tier-tab--selected", i === idx);
-    });
-    renderTierDetail(tablesEl, idx);
-  };
 }
 
 function renderTierDetail(container, tierIdx) {
